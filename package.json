@@ -14,7 +14,11 @@
         "status": "node src/presentation/cli/index.js status",
         "docker:up": "docker compose -f docker/docker-compose.yml up -d",
         "docker:down": "docker compose -f docker/docker-compose.yml down",
-        "docker:reset": "npm run docker:down && docker volume rm streams-poc_mongo-data && npm run docker:up"
+        "docker:reset": "npm run docker:down && docker volume rm docker_mongo-data 2>/dev/null || true && npm run docker:up && echo '⏳ Waiting for MongoDB to be ready...' && sleep 5",
+        "docker:logs": "docker compose -f docker/docker-compose.yml logs -f mongodb",
+        "seed:1m": "TOTAL_DOCUMENTS=1000000 npm run seed",
+        "seed:100k": "TOTAL_DOCUMENTS=100000 npm run seed",
+        "seed:10k": "TOTAL_DOCUMENTS=10000 npm run seed"
     },
     "keywords": [
         "mongodb",

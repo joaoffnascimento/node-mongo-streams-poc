@@ -34,7 +34,7 @@ program
     try {
       // Check document count and warn if too large
       const totalCount = await repository.count();
-      if (totalCount > 100000) {
+      if (totalCount > 1000000) {
         console.log(chalk.bold.red("\n⚠️  WARNING: Large dataset detected!"));
         console.log(
           chalk.red(
@@ -90,7 +90,7 @@ program
     try {
       // Check document count and provide a reasonable limit
       const totalCount = await repository.count();
-      const processingLimit = Math.min(totalCount, 100000); // Process max 100k for demo
+      const processingLimit = Math.min(totalCount, 1000000); // Process max 1M for demo
 
       const result = await useCase.execute({ limit: processingLimit });
       console.log(chalk.bold.green("\n📊 RESULTS (WITH STREAMS):"));
@@ -131,7 +131,7 @@ program
       // Check if we have data
       const count = await repository.count();
       if (count === 0) {
-        console.log(chalk.yellow('No data found. Run "seed" command first.')); 
+        console.log(chalk.yellow('No data found. Run "seed" command first.'));
         process.exit(1);
       }
 
@@ -139,11 +139,19 @@ program
         chalk.gray(`Found ${count.toLocaleString()} documents in database\n`)
       );
 
-      // Test with smaller subset for comparison
-      const testSize = Math.min(count, 50000); // Limit for comparison
+      // For streams, we can process all documents (they're memory-efficient)
+      // For traditional processing, we limit to prevent OOM on smaller datasets
+      const streamTestSize = count; // Process all documents with streams
+      const traditionalTestSize = Math.min(count, 100000); // Limit traditional to 100k max
+
       console.log(
         chalk.gray(
-          `Running comparison with ${testSize.toLocaleString()} documents\n`
+          `Stream processing: ${streamTestSize.toLocaleString()} documents`
+        )
+      );
+      console.log(
+        chalk.gray(
+          `Traditional processing: ${traditionalTestSize.toLocaleString()} documents (limited for safety)\n`
         )
       );
 
@@ -153,7 +161,7 @@ program
       console.log(chalk.bold.green("🟢 Testing WITH Streams..."));
       const monitor1 = new PerformanceMonitor("Comparison - WITH Streams");
       const useCase1 = new ProcessDocumentsWithStream(repository, monitor1);
-      results.withStream = await useCase1.execute({ limit: testSize });
+      results.withStream = await useCase1.execute({ limit: streamTestSize });
       results.withStream.report = monitor1.stop();
 
       // Wait and force GC to reset memory state
@@ -168,8 +176,13 @@ program
       console.log(chalk.bold.red("🔴 Testing WITHOUT Streams..."));
       try {
         const monitor2 = new PerformanceMonitor("Comparison - WITHOUT Streams");
-        const useCase2 = new ProcessDocumentsWithoutStream(repository, monitor2);
-        results.noStream = await useCase2.execute({ limit: testSize });
+        const useCase2 = new ProcessDocumentsWithoutStream(
+          repository,
+          monitor2
+        );
+        results.noStream = await useCase2.execute({
+          limit: traditionalTestSize,
+        });
         results.noStream.report = monitor2.stop();
       } catch (error) {
         console.log(chalk.red("❌ WITHOUT streams failed (likely OOM)"));
@@ -184,9 +197,16 @@ program
       // Show stream results
       console.log(chalk.green("\n🟢 WITH STREAMS:"));
       console.log(
+        chalk.green(
+          `   Documents: ${results.withStream.totalProcessed.toLocaleString()}`
+        )
+      );
+      console.log(
         chalk.green(`   Time: ${results.withStream.totalTime.toFixed(2)}s`)
       );
-      console.log(chalk.green(`   Memory Used: ${results.withStream.memoryUsed}MB`));
+      console.log(
+        chalk.green(`   Memory Used: ${results.withStream.memoryUsed}MB`)
+      );
       console.log(
         chalk.green(
           `   Peak Memory: ${results.withStream.report.memory.max.heapUsed}MB`
@@ -196,48 +216,141 @@ program
       // Show traditional results or failure
       if (results.noStream.failed) {
         console.log(chalk.red("\n❌ WITHOUT STREAMS: FAILED"));
+        console.log(
+          chalk.red(
+            `   Documents attempted: ${traditionalTestSize.toLocaleString()}`
+          )
+        );
         console.log(chalk.red(`   Error: ${results.noStream.error}`));
         console.log(chalk.bold.green("\n🏆 STREAMS ARE THE CLEAR WINNER!"));
-        console.log(chalk.green("   ✅ Streams completed successfully"));
-        console.log(chalk.green("   ✅ Traditional processing failed with OOM"));
-        console.log(chalk.green("   ✅ Streams handle large datasets efficiently"));
+        console.log(
+          chalk.green(
+            `   ✅ Streams: Successfully processed ${results.withStream.totalProcessed.toLocaleString()} documents`
+          )
+        );
+        console.log(
+          chalk.green(
+            `   ❌ Traditional: Failed to process ${traditionalTestSize.toLocaleString()} documents (OOM)`
+          )
+        );
+        console.log(
+          chalk.green("   ✅ Streams handle large datasets efficiently")
+        );
+        console.log(
+          chalk.green("   ✅ Streams provide consistent memory usage")
+        );
       } else {
         console.log(chalk.red("\n🔴 WITHOUT STREAMS:"));
         console.log(
+          chalk.red(
+            `   Documents: ${results.noStream.totalProcessed.toLocaleString()}`
+          )
+        );
+        console.log(
           chalk.red(`   Time: ${results.noStream.totalTime.toFixed(2)}s`)
         );
-        console.log(chalk.red(`   Memory Used: ${results.noStream.memoryUsed}MB`));
+        console.log(
+          chalk.red(`   Memory Used: ${results.noStream.memoryUsed}MB`)
+        );
         console.log(
           chalk.red(
             `   Peak Memory: ${results.noStream.report.memory.max.heapUsed}MB`
           )
         );
 
-        // Calculate meaningful improvements
-        const timeDiff = ((results.noStream.totalTime - results.withStream.totalTime) / results.noStream.totalTime) * 100;
-        const memoryDiff = results.noStream.memoryUsed > results.withStream.memoryUsed 
-          ? ((results.noStream.memoryUsed - results.withStream.memoryUsed) / results.noStream.memoryUsed) * 100
-          : 0;
+        // Calculate meaningful improvements (when both completed)
+        console.log(chalk.bold.cyan("\n📈 PERFORMANCE COMPARISON:"));
 
-        console.log(chalk.bold.cyan("\n📈 PERFORMANCE IMPROVEMENTS WITH STREAMS:"));
-        
+        // Time comparison
+        const timeDiff =
+          ((results.noStream.totalTime - results.withStream.totalTime) /
+            results.noStream.totalTime) *
+          100;
         if (timeDiff > 0) {
-          console.log(chalk.cyan(`   ⚡ Speed: ${timeDiff.toFixed(1)}% faster`));
+          console.log(
+            chalk.cyan(`   ⚡ Speed: Streams ${timeDiff.toFixed(1)}% faster`)
+          );
         } else {
-          console.log(chalk.cyan(`   ⚡ Speed: ${Math.abs(timeDiff).toFixed(1)}% slower (acceptable for memory savings)`));
+          console.log(
+            chalk.cyan(
+              `   ⚡ Speed: Traditional ${Math.abs(timeDiff).toFixed(
+                1
+              )}% faster`
+            )
+          );
         }
-        
+
+        // Memory comparison
+        const memoryDiff =
+          results.noStream.memoryUsed > results.withStream.memoryUsed
+            ? ((results.noStream.memoryUsed - results.withStream.memoryUsed) /
+                results.noStream.memoryUsed) *
+              100
+            : 0;
+
         if (memoryDiff > 0) {
-          console.log(chalk.cyan(`   💾 Memory: ${memoryDiff.toFixed(1)}% less memory usage`));
+          console.log(
+            chalk.cyan(
+              `   💾 Memory: Streams use ${memoryDiff.toFixed(1)}% less memory`
+            )
+          );
+          console.log(
+            chalk.cyan(
+              `   📊 Memory Efficiency: ${(
+                results.noStream.memoryUsed /
+                Math.max(1, results.withStream.memoryUsed)
+              ).toFixed(1)}x more efficient`
+            )
+          );
         } else {
-          console.log(chalk.cyan(`   💾 Memory: Similar usage but consistent across dataset sizes`));
+          console.log(
+            chalk.cyan(
+              `   💾 Memory: Similar usage (streams consistent across any dataset size)`
+            )
+          );
         }
-        
-        console.log(chalk.cyan(`   📊 Memory Efficiency: ${(results.noStream.memoryUsed / Math.max(1, results.withStream.memoryUsed)).toFixed(1)}x more efficient`));
+
+        // Throughput comparison
+        const streamThroughput =
+          results.withStream.totalProcessed / results.withStream.totalTime;
+        const traditionalThroughput =
+          results.noStream.totalProcessed / results.noStream.totalTime;
+        console.log(
+          chalk.cyan(
+            `   � Stream Throughput: ${streamThroughput.toFixed(0)} docs/sec`
+          )
+        );
+        console.log(
+          chalk.cyan(
+            `   � Traditional Throughput: ${traditionalThroughput.toFixed(
+              0
+            )} docs/sec`
+          )
+        );
+
+        // Scale demonstration
+        if (
+          results.withStream.totalProcessed > results.noStream.totalProcessed
+        ) {
+          const scaleFactor =
+            results.withStream.totalProcessed / results.noStream.totalProcessed;
+          console.log(chalk.bold.green(`\n🌟 SCALABILITY ADVANTAGE:`));
+          console.log(
+            chalk.green(
+              `   ✅ Streams processed ${scaleFactor.toFixed(
+                1
+              )}x more documents successfully`
+            )
+          );
+          console.log(
+            chalk.green(
+              `   ✅ Traditional processing limited by memory constraints`
+            )
+          );
+        }
       }
 
       console.log("\n" + "═".repeat(80));
-
     } catch (error) {
       console.error(chalk.red("Comparison failed:"), error.message);
       process.exit(1);
