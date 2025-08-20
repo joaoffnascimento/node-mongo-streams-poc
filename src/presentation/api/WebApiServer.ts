@@ -2,7 +2,6 @@ import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { CliApiService } from "./CliApiService";
-import MongoDocumentRepository from "@infrastructure/database/repositories/MongoDocumentRepository";
 import logger from "@infrastructure/monitoring/logger";
 import {
   register,
