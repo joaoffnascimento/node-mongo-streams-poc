@@ -1,23 +1,23 @@
 version: "3.8"
 
 services:
+  # MongoDB Database (Unified Configuration)
   mongodb:
-    image: mongo:6.0
-    container_name: mongodb-limited
+    image: mongo:7
+    container_name: streams-mongodb
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "${MONGO_PORT:-27017}:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password123
-      MONGO_INITDB_DATABASE: streams_poc
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password123}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-streams_poc}
     volumes:
-      - mongo-data:/data/db
+      - mongodb-data:/data/db
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     deploy:
       resources:
         limits:
-          # Simula limitações do Free Tier
           memory: 512M
           cpus: "0.5"
         reservations:
@@ -27,7 +27,245 @@ services:
       --wiredTigerCacheSizeGB 0.25
       --slowms 100
       --profile 1
+    networks:
+      - streams-network
+    labels:
+      - "coroot.service=mongodb"
+      - "coroot.version=7.0"
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Web API Service (Unified Configuration)
+  api:
+    build:
+      context: ..
+      dockerfile: ${DOCKERFILE:-Dockerfile}
+    container_name: streams-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3000
+      - MONGODB_URI=mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-password123}@mongodb:27017/${MONGO_DATABASE:-streams_poc}?authSource=admin
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /dev:/host/dev:ro
+      - ./logs:/app/logs
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+    networks:
+      - streams-network
+    labels:
+      - "coroot.service=streams-api"
+      - "coroot.version=1.0.0"
+
+  # MongoDB Exporter for Prometheus
+  mongodb-exporter:
+    image: percona/mongodb_exporter:0.40
+    container_name: mongodb-exporter
+    restart: unless-stopped
+    ports:
+      - "9216:9216"
+    environment:
+      - MONGODB_URI=mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-password123}@mongodb:27017/?authSource=admin
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - streams-network
+    command:
+      - "--mongodb.uri=mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-password123}@mongodb:27017/?authSource=admin"
+      - "--web.listen-address=:9216"
+      - "--discovering-mode"
+      - "--compatible-mode"
+    profiles:
+      - monitoring
+      - full
+
+  # Coroot Community Edition
+  coroot:
+    image: ghcr.io/coroot/coroot:latest
+    container_name: coroot
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - BOOTSTRAP_PROMETHEUS_URL=http://prometheus:9090
+      - BOOTSTRAP_CLICKHOUSE_ADDRESS=clickhouse:9000
+    depends_on:
+      - prometheus
+      - clickhouse
+    networks:
+      - streams-network
+    volumes:
+      - coroot-data:/data
+    profiles:
+      - monitoring
+      - full
+
+  # Coroot Node Agent (Collects system metrics)
+  coroot-node-agent:
+    image: ghcr.io/coroot/coroot-node-agent:latest
+    container_name: coroot-node-agent
+    restart: unless-stopped
+    privileged: true
+    pid: host
+    ports:
+      - "8082:80" # Expose on host port for Prometheus scraping
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /dev:/host/dev:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - LISTEN=0.0.0.0:80
+    networks:
+      - streams-network
+    profiles:
+      - monitoring
+      - full
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--storage.tsdb.retention.time=30d"
+      - "--web.enable-lifecycle"
+    networks:
+      - streams-network
+    depends_on:
+      - api
+      - mongodb-exporter
+      - node-exporter
+      - cadvisor
+    profiles:
+      - monitoring
+      - full
+
+  # ClickHouse for storing metrics data
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "8123:8123"
+    environment:
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - ./monitoring/clickhouse-config.xml:/etc/clickhouse-server/config.d/custom.xml:ro
+    networks:
+      - streams-network
+    profiles:
+      - monitoring
+      - full
+
+  # Node Exporter for system metrics
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.rootfs=/rootfs"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    networks:
+      - streams-network
+    profiles:
+      - monitoring
+      - full
+
+  # cAdvisor for container metrics
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    privileged: true
+    networks:
+      - streams-network
+    profiles:
+      - monitoring
+      - full
+
+  # Grafana for additional dashboards (optional)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana:/etc/grafana/provisioning
+    networks:
+      - streams-network
+    depends_on:
+      - prometheus
+    profiles:
+      - monitoring
+      - full
+
+networks:
+  streams-network:
+    driver: bridge
 
 volumes:
-  mongo-data:
+  mongodb-data:
+    driver: local
+  coroot-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  clickhouse-data:
+    driver: local
+  grafana-data:
     driver: local

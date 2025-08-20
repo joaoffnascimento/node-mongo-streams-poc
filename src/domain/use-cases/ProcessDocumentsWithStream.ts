@@ -48,17 +48,9 @@ export class ProcessDocumentsWithStream {
         )
       );
 
-      // Initial monitoring
-      const initialMemory = process.memoryUsage();
-      console.log(
-        chalk.gray(
-          `Initial memory: ${Math.round(
-            initialMemory.heapUsed / 1024 / 1024
-          )} MB`
-        )
-      );
-
+      // Start performance monitoring
       const startTime = Date.now();
+      const initialMemory = process.memoryUsage();
       let processedCount = 0;
       const limit = options.limit || 10000; // Default limit for safety
 
@@ -126,21 +118,27 @@ export class ProcessDocumentsWithStream {
 
       spinner.succeed(chalk.green(`✅ Processing completed successfully`));
 
+      // End performance monitoring and get results
+      const performanceReport = this.monitor.stop();
       const totalTime = (Date.now() - startTime) / 1000;
+
+      // Check final memory
+      const finalMemory = process.memoryUsage();
+      const totalMemoryUsed = Math.max(
+        Math.round(
+          (finalMemory.heapUsed - initialMemory.heapUsed) / 1024 / 1024
+        ),
+        Math.round(finalMemory.heapUsed / 1024 / 1024) // Use current memory if diff is negative
+      );
+
       console.log(
         chalk.green(
-          `📊 Total processed: ${processedCount.toLocaleString()} documents in ${totalTime.toFixed(
+          `� Total processed: ${processedCount.toLocaleString()} documents in ${totalTime.toFixed(
             2
           )}s`
         )
       );
-
-      // Check final memory
-      const finalMemory = process.memoryUsage();
-      const totalMemoryUsed = Math.round(
-        (finalMemory.heapUsed - initialMemory.heapUsed) / 1024 / 1024
-      );
-      console.log(chalk.green(`💾 Total memory used: +${totalMemoryUsed} MB`));
+      console.log(chalk.green(`�💾 Total memory used: ${totalMemoryUsed} MB`));
 
       console.log(chalk.bold.green("\n🟢 ADVANTAGES DEMONSTRATED:"));
       console.log(chalk.green("   • Low, consistent memory usage"));

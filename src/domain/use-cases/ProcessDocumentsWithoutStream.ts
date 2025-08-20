@@ -108,12 +108,18 @@ export class ProcessDocumentsWithoutStream {
         )
       );
 
+      // End performance monitoring and get results
+      const performanceReport = this.monitor.stop();
+
       // Check final memory
       const finalMemory = process.memoryUsage();
-      const totalMemoryUsed = Math.round(
-        (finalMemory.heapUsed - initialMemory.heapUsed) / 1024 / 1024
+      const totalMemoryUsed = Math.max(
+        Math.round(
+          (finalMemory.heapUsed - initialMemory.heapUsed) / 1024 / 1024
+        ),
+        Math.round(finalMemory.heapUsed / 1024 / 1024) // Use current memory if diff is negative
       );
-      console.log(chalk.red(`💾 Total memory used: +${totalMemoryUsed} MB`));
+      console.log(chalk.red(`💾 Total memory used: ${totalMemoryUsed} MB`));
 
       console.log(chalk.bold.red("\n🔴 PROBLEMS DEMONSTRATED:"));
       console.log(chalk.red("   • High memory consumption"));
