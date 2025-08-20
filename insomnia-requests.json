@@ -28,57 +28,53 @@
             "parentId": "wrk_1",
             "created": 1690000000002,
             "modified": 1690000000002,
-            "name": "API Requests",
+            "name": "API Endpoints",
             "_type": "request_group"
+        },
+        {
+            "_id": "fld_2",
+            "parentId": "wrk_1",
+            "created": 1690000000003,
+            "modified": 1690000000003,
+            "name": "Processing Operations",
+            "_type": "request_group"
+        },
+        {
+            "_id": "fld_3",
+            "parentId": "wrk_1",
+            "created": 1690000000004,
+            "modified": 1690000000004,
+            "name": "Database Operations",
+            "_type": "request_group"
+        },
+        {
+            "_id": "req_root",
+            "parentId": "fld_1",
+            "created": 1690000000005,
+            "modified": 1690000000005,
+            "name": "API Documentation",
+            "method": "GET",
+            "url": "{{ base_url }}/",
+            "_type": "request"
         },
         {
             "_id": "req_health",
             "parentId": "fld_1",
-            "created": 1690000000003,
-            "modified": 1690000000003,
+            "created": 1690000000006,
+            "modified": 1690000000006,
             "name": "Health Check",
             "method": "GET",
             "url": "{{ base_url }}/health",
             "_type": "request"
         },
         {
-            "_id": "req_generate",
-            "parentId": "fld_1",
-            "created": 1690000000004,
-            "modified": 1690000000004,
-            "name": "Generate Test Data (100k)",
-            "method": "POST",
-            "url": "{{ base_url }}/api/cli/generate/100000",
-            "_type": "request"
-        },
-        {
-            "_id": "req_stream_report",
-            "parentId": "fld_1",
-            "created": 1690000000005,
-            "modified": 1690000000005,
-            "name": "Stream Processing Report",
-            "method": "GET",
-            "url": "{{ base_url }}/api/cli/report/stream",
-            "_type": "request"
-        },
-        {
-            "_id": "req_traditional_report",
-            "parentId": "fld_1",
-            "created": 1690000000006,
-            "modified": 1690000000006,
-            "name": "Traditional Processing Report",
-            "method": "GET",
-            "url": "{{ base_url }}/api/cli/report/traditional",
-            "_type": "request"
-        },
-        {
-            "_id": "req_comparison_report",
+            "_id": "req_status",
             "parentId": "fld_1",
             "created": 1690000000007,
             "modified": 1690000000007,
-            "name": "Performance Comparison Report",
+            "name": "Database Status",
             "method": "GET",
-            "url": "{{ base_url }}/api/cli/report/comparison",
+            "url": "{{ base_url }}/api/status",
             "_type": "request"
         },
         {
@@ -89,6 +85,72 @@
             "name": "Prometheus Metrics",
             "method": "GET",
             "url": "{{ base_url }}/metrics",
+            "_type": "request"
+        },
+        {
+            "_id": "req_stream_process",
+            "parentId": "fld_2",
+            "created": 1690000000009,
+            "modified": 1690000000009,
+            "name": "Process with Streams",
+            "method": "POST",
+            "url": "{{ base_url }}/api/process/stream",
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"limit\": 10000\n}"
+            },
+            "_type": "request"
+        },
+        {
+            "_id": "req_no_stream_process",
+            "parentId": "fld_2",
+            "created": 1690000000010,
+            "modified": 1690000000010,
+            "name": "Process without Streams",
+            "method": "POST",
+            "url": "{{ base_url }}/api/process/no-stream",
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"limit\": 10000\n}"
+            },
+            "_type": "request"
+        },
+        {
+            "_id": "req_compare",
+            "parentId": "fld_2",
+            "created": 1690000000011,
+            "modified": 1690000000011,
+            "name": "Compare Both Methods",
+            "method": "POST",
+            "url": "{{ base_url }}/api/compare",
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"limit\": 5000\n}"
+            },
+            "_type": "request"
+        },
+        {
+            "_id": "req_seed",
+            "parentId": "fld_3",
+            "created": 1690000000012,
+            "modified": 1690000000012,
+            "name": "Seed Database",
+            "method": "POST",
+            "url": "{{ base_url }}/api/seed",
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"count\": 100000\n}"
+            },
+            "_type": "request"
+        },
+        {
+            "_id": "req_clear",
+            "parentId": "fld_3",
+            "created": 1690000000013,
+            "modified": 1690000000013,
+            "name": "Clear Database",
+            "method": "DELETE",
+            "url": "{{ base_url }}/api/clear",
             "_type": "request"
         }
     ]
