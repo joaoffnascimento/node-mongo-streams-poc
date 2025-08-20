@@ -41,20 +41,21 @@ class MongoDocumentRepository extends IDocumentRepository {
   async findAllStream(options = {}) {
     const collection = await this.getCollection();
 
-    const cursorOptions = {
-      batchSize: options.batchSize || 1000,
-      ...options.cursorOptions,
-    };
-
     const findOptions = {
-      projection: options.projection,
-      sort: options.sort,
-      ...cursorOptions,
+      batchSize: options.batchSize || 1000,
     };
 
     // Add limit if specified
     if (options.limit) {
       findOptions.limit = options.limit;
+    }
+
+    // Add other options
+    if (options.projection) {
+      findOptions.projection = options.projection;
+    }
+    if (options.sort) {
+      findOptions.sort = options.sort;
     }
 
     const cursor = collection.find(options.filter || {}, findOptions);

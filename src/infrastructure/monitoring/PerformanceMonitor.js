@@ -86,21 +86,40 @@ class PerformanceMonitor {
   }
 
   stop() {
+    // Prevent double-stopping
+    if (this.stopped) {
+      return this.lastReport;
+    }
+    this.stopped = true;
+
     clearInterval(this.lagInterval);
     clearInterval(this.sampleInterval);
+
+    // Collect final sample
+    this.collectSample();
 
     // Collect final metrics
     const endTime = Date.now();
     const endMemory = process.memoryUsage();
     const duration = (endTime - this.metrics.startTime) / 1000;
 
-    const maxHeap = Math.max(
-      ...this.metrics.samples.map((s) => s.memory.heapUsed)
-    );
-    const avgHeap = Math.round(
-      this.metrics.samples.reduce((a, b) => a + b.memory.heapUsed, 0) /
-        this.metrics.samples.length
-    );
+    const maxHeap =
+      this.metrics.samples.length > 0
+        ? Math.max(...this.metrics.samples.map((s) => s.memory.heapUsed))
+        : Math.round(endMemory.heapUsed / 1024 / 1024);
+
+    const minHeap =
+      this.metrics.samples.length > 0
+        ? Math.min(...this.metrics.samples.map((s) => s.memory.heapUsed))
+        : Math.round(endMemory.heapUsed / 1024 / 1024);
+
+    const avgHeap =
+      this.metrics.samples.length > 0
+        ? Math.round(
+            this.metrics.samples.reduce((a, b) => a + b.memory.heapUsed, 0) /
+              this.metrics.samples.length
+          )
+        : Math.round(endMemory.heapUsed / 1024 / 1024);
 
     const avgEventLoopLag =
       this.metrics.eventLoopLag.length > 0
@@ -108,7 +127,12 @@ class PerformanceMonitor {
           this.metrics.eventLoopLag.length
         : 0;
 
-    return {
+    const maxEventLoopLag =
+      this.metrics.eventLoopLag.length > 0
+        ? Math.max(...this.metrics.eventLoopLag.map((e) => e.lag))
+        : 0;
+
+    this.lastReport = {
       name: this.name,
       duration,
       memory: {
@@ -123,6 +147,9 @@ class PerformanceMonitor {
         max: {
           heapUsed: maxHeap,
         },
+        min: {
+          heapUsed: minHeap,
+        },
         average: {
           heapUsed: avgHeap,
         },
@@ -132,13 +159,13 @@ class PerformanceMonitor {
         totalTime: this.metrics.gcEvents.reduce((a, b) => a + b.duration, 0),
       },
       eventLoop: {
-        avgLag: avgEventLoopLag.toFixed(2),
-        maxLag: Math.max(
-          ...this.metrics.eventLoopLag.map((e) => e.lag)
-        ).toFixed(2),
+        avgLag: Number(avgEventLoopLag.toFixed(2)),
+        maxLag: Number(maxEventLoopLag.toFixed(2)),
       },
       samples: this.metrics.samples,
     };
+
+    return this.lastReport;
   }
 
   printReport() {
@@ -157,8 +184,8 @@ class PerformanceMonitor {
     console.log(`   Average: ${report.memory.average.heapUsed} MB`);
     console.log(
       `   Delta:   ${
-        report.memory.end.heapUsed - report.memory.start.heapUsed
-      } MB`
+        report.memory.end.heapUsed > report.memory.start.heapUsed ? "+" : ""
+      }${report.memory.end.heapUsed - report.memory.start.heapUsed} MB`
     );
 
     console.log("\n♻️  Garbage Collection:");

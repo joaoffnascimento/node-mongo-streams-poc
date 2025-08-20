@@ -32,6 +32,22 @@ program
     const useCase = new ProcessDocumentsWithoutStream(repository, monitor);
 
     try {
+      // Check document count and warn if too large
+      const totalCount = await repository.count();
+      if (totalCount > 100000) {
+        console.log(chalk.bold.red("\n⚠️  WARNING: Large dataset detected!"));
+        console.log(
+          chalk.red(
+            `   ${totalCount.toLocaleString()} documents may cause Out of Memory error`
+          )
+        );
+        console.log(
+          chalk.yellow(
+            "   This is intentional to demonstrate the problem with traditional processing"
+          )
+        );
+      }
+
       const result = await useCase.execute();
       console.log(chalk.bold.yellow("\n📊 RESULTS (NO STREAMS):"));
       console.log(
@@ -67,7 +83,11 @@ program
     const useCase = new ProcessDocumentsWithStream(repository, monitor);
 
     try {
-      const result = await useCase.execute();
+      // Check document count and provide a reasonable limit
+      const totalCount = await repository.count();
+      const processingLimit = Math.min(totalCount, 100000); // Process max 100k for demo
+
+      const result = await useCase.execute({ limit: processingLimit });
       console.log(chalk.bold.green("\n📊 RESULTS (WITH STREAMS):"));
       console.log(
         chalk.green(
@@ -134,9 +154,14 @@ program
         results.noStream = { failed: true, error: error.message };
       }
 
-      // Wait a bit and force GC
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      if (global.gc) global.gc();
+      // Wait a bit and force GC to reset memory state
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      if (global.gc) {
+        global.gc();
+        global.gc(); // Double GC to be sure
+      }
+
+      console.log(chalk.gray("Memory reset completed"));
 
       // Test WITH streams
       console.log(chalk.bold.green("\n🟢 Testing WITH Streams..."));
@@ -182,23 +207,31 @@ program
           ((results.noStream.totalTime - results.withStream.totalTime) /
             results.noStream.totalTime) *
           100;
+
+        // Use proper values and handle edge cases
+        const noStreamMemory = results.noStream.memoryUsed || 0;
+        const streamMemory = results.withStream.memoryUsed || 0;
+
         const memoryDiff =
-          ((results.noStream.report.memory.max.heapUsed -
-            results.withStream.report.memory.max.heapUsed) /
-            results.noStream.report.memory.max.heapUsed) *
-          100;
+          noStreamMemory > 0
+            ? ((noStreamMemory - streamMemory) / noStreamMemory) * 100
+            : 0;
 
         console.log(chalk.bold.cyan("\n📈 IMPROVEMENTS:"));
         console.log(
           chalk.cyan(
-            `   Time: ${timeDiff > 0 ? "+" : ""}${timeDiff.toFixed(1)}%`
+            `   Time: ${timeDiff > 0 ? "+" : ""}${timeDiff.toFixed(1)}% ${
+              timeDiff > 0 ? "(streams faster)" : "(traditional faster)"
+            }`
           )
         );
         console.log(
           chalk.cyan(
             `   Memory: ${memoryDiff > 0 ? "-" : "+"}${Math.abs(
               memoryDiff
-            ).toFixed(1)}%`
+            ).toFixed(1)}% ${
+              memoryDiff > 0 ? "(streams use less)" : "(streams use more)"
+            }`
           )
         );
       }

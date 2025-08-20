@@ -31,102 +31,71 @@ class ProcessDocumentsWithStream {
 
       const startTime = Date.now();
       let processedCount = 0;
-      const self = this;
-      const limit = options.limit || Number.MAX_SAFE_INTEGER;
+      const limit = options.limit || 10000; // Default limit for safety
+
+      console.log(
+        chalk.gray(`Processing limit: ${limit.toLocaleString()} documents\n`)
+      );
 
       // Criar cursor stream do MongoDB
       const cursorStreamOptions = {
         batchSize: options.batchSize || 1000,
+        limit: limit, // Always set a limit
       };
-
-      if (options.limit) {
-        cursorStreamOptions.limit = options.limit;
-      }
 
       const cursorStream = await this.repository.findAllStream(
         cursorStreamOptions
       );
-
-      // Transform stream para processamento
-      const processStream = new Transform({
-        objectMode: true,
-        highWaterMark: options.highWaterMark || 100, // Baixo para demonstrar controle de memória
-
-        transform(chunk, encoding, callback) {
-          try {
-            // Check if we've reached the limit
-            if (processedCount >= limit) {
-              callback(); // End the stream
-              return;
-            }
-
-            // Simula processamento pesado (mesma lógica do non-stream)
-            const processed = self.heavyProcessing(chunk);
-            processedCount++;
-
-            // Progress tracking
-            const progressInterval = Math.max(1000, Math.floor(limit / 20)); // Report progress 20 times during processing
-            if (
-              processedCount % progressInterval === 0 ||
-              processedCount % 5000 === 0
-            ) {
-              const memory = process.memoryUsage();
-              const memoryDelta = Math.round(
-                (memory.heapUsed - initialMemory.heapUsed) / 1024 / 1024
-              );
-              const progress =
-                limit !== Number.MAX_SAFE_INTEGER
-                  ? ` (${((processedCount / limit) * 100).toFixed(1)}%)`
-                  : "";
-              console.log(
-                chalk.green(
-                  `📊 Processed: ${processedCount.toLocaleString()}${progress} | Memory: +${memoryDelta}MB | Heap: ${Math.round(
-                    memory.heapUsed / 1024 / 1024
-                  )}MB`
-                )
-              );
-            }
-
-            callback(null, processed);
-          } catch (error) {
-            callback(error);
-          }
-        },
-      });
-
-      // Result collection stream
-      const results = [];
-      const collectStream = new Transform({
-        objectMode: true,
-        transform(chunk, encoding, callback) {
-          try {
-            // Em um cenário real, você poderia:
-            // 1. Escrever diretamente para outro banco
-            // 2. Enviar para uma fila
-            // 3. Fazer streaming para um arquivo
-            // Aqui coletamos apenas para demonstração
-            results.push(chunk);
-            callback(null, chunk); // Pass the chunk through the pipeline
-          } catch (error) {
-            callback(error);
-          }
-        },
-      });
 
       const spinner = ora({
         text: chalk.green("Processing documents with streams..."),
         spinner: "dots",
       }).start();
 
-      try {
-        // Execute pipeline
-        await pipelineAsync(cursorStream, processStream, collectStream);
+      // Process stream directly without complex pipeline
+      const results = [];
 
-        spinner.succeed(chalk.green(`✅ Pipeline completed successfully`));
-      } catch (pipelineError) {
-        spinner.fail(chalk.red("Pipeline processing failed"));
-        throw pipelineError;
-      }
+      await new Promise((resolve, reject) => {
+        cursorStream.on("data", (chunk) => {
+          try {
+            if (processedCount >= limit) {
+              cursorStream.destroy();
+              resolve();
+              return;
+            }
+
+            // Process the document
+            const processed = this.heavyProcessing(chunk);
+            results.push(processed);
+            processedCount++;
+
+            // Progress tracking
+            if (processedCount % 1000 === 0) {
+              const memory = process.memoryUsage();
+              const memoryDelta = Math.round(
+                (memory.heapUsed - initialMemory.heapUsed) / 1024 / 1024
+              );
+              const progress = ((processedCount / limit) * 100).toFixed(1);
+
+              spinner.text = chalk.green(
+                `Processing: ${processedCount.toLocaleString()}/${limit.toLocaleString()} (${progress}%) | Memory: +${memoryDelta}MB`
+              );
+            }
+          } catch (error) {
+            reject(error);
+          }
+        });
+
+        cursorStream.on("end", () => {
+          resolve();
+        });
+
+        cursorStream.on("error", (error) => {
+          reject(error);
+        });
+      });
+
+      spinner.succeed(chalk.green(`✅ Processing completed successfully`));
 
       const totalTime = (Date.now() - startTime) / 1000;
       console.log(
