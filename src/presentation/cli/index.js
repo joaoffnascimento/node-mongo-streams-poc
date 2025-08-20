@@ -71,6 +71,11 @@ program
         error.message
       );
       process.exit(1);
+    } finally {
+      // Close MongoDB connection to allow process to exit
+      const mongoConnection = require("../../infrastructure/database/MongoConnection");
+      await mongoConnection.disconnect();
+      process.exit(0);
     }
   });
 
@@ -106,6 +111,11 @@ program
         error.message
       );
       process.exit(1);
+    } finally {
+      // Close MongoDB connection to allow process to exit
+      const mongoConnection = require("../../infrastructure/database/MongoConnection");
+      await mongoConnection.disconnect();
+      process.exit(0);
     }
   });
 
@@ -240,6 +250,11 @@ program
     } catch (error) {
       console.error(chalk.red("Comparison failed:"), error.message);
       process.exit(1);
+    } finally {
+      // Close MongoDB connection to allow process to exit
+      const mongoConnection = require("../../infrastructure/database/MongoConnection");
+      await mongoConnection.disconnect();
+      process.exit(0);
     }
   });
 
@@ -270,6 +285,11 @@ program
     } catch (error) {
       console.error(chalk.red("Failed to check status:"), error.message);
       process.exit(1);
+    } finally {
+      // Close MongoDB connection to allow process to exit
+      const mongoConnection = require("../../infrastructure/database/MongoConnection");
+      await mongoConnection.disconnect();
+      process.exit(0);
     }
   });
 

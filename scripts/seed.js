@@ -151,6 +151,9 @@ async function seedDatabase() {
     console.error(chalk.red("\n❌ Seeding failed:"), error);
     process.exit(1);
   } finally {
+    // Close MongoDB connection to allow process to exit
+    const mongoConnection = require("../src/infrastructure/database/MongoConnection");
+    await mongoConnection.disconnect();
     process.exit(0);
   }
 }
