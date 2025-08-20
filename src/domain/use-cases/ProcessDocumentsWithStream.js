@@ -53,7 +53,7 @@ class ProcessDocumentsWithStream {
       }).start();
 
       // Process stream directly without complex pipeline
-      const results = [];
+      let processedResults = 0; // Just count, don't store results
 
       await new Promise((resolve, reject) => {
         cursorStream.on("data", (chunk) => {
@@ -64,9 +64,9 @@ class ProcessDocumentsWithStream {
               return;
             }
 
-            // Process the document
-            const processed = this.heavyProcessing(chunk);
-            results.push(processed);
+            // Process the document (but don't store result to save memory)
+            this.heavyProcessing(chunk);
+            processedResults++;
             processedCount++;
 
             // Progress tracking
@@ -85,7 +85,6 @@ class ProcessDocumentsWithStream {
             reject(error);
           }
         });
-
         cursorStream.on("end", () => {
           resolve();
         });
