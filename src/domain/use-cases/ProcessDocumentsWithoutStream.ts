@@ -1,13 +1,37 @@
-const chalk = require("chalk");
-const ora = require("ora");
+import chalk from "chalk";
+import ora from "ora";
+import { Document } from "@domain/entities/Document";
+import { IDocumentRepository } from "@domain/repositories/IDocumentRepository";
+import { PerformanceMonitor } from "@infrastructure/monitoring/PerformanceMonitor";
 
-class ProcessDocumentsWithoutStream {
-  constructor(documentRepository, performanceMonitor) {
+export interface IProcessNoStreamOptions {
+  limit?: number;
+}
+
+export interface IProcessNoStreamResult {
+  totalProcessed: number;
+  loadTime: number;
+  processTime: number;
+  totalTime: number;
+  memoryUsed: number;
+  method: string;
+}
+
+export class ProcessDocumentsWithoutStream {
+  private repository: IDocumentRepository;
+  private monitor: PerformanceMonitor; // Used by interface, may be used for future monitoring
+
+  constructor(
+    documentRepository: IDocumentRepository,
+    performanceMonitor: PerformanceMonitor
+  ) {
     this.repository = documentRepository;
     this.monitor = performanceMonitor;
   }
 
-  async execute(options = {}) {
+  public async execute(
+    options: IProcessNoStreamOptions = {}
+  ): Promise<IProcessNoStreamResult> {
     const spinner = ora({
       text: "Loading all documents into memory...",
       spinner: "dots",
@@ -19,7 +43,7 @@ class ProcessDocumentsWithoutStream {
         chalk.yellow("⚠️  WARNING: This will load ALL documents into memory!\n")
       );
 
-      // Monitor inicial
+      // Initial monitoring
       const initialMemory = process.memoryUsage();
       console.log(
         chalk.gray(
@@ -29,22 +53,23 @@ class ProcessDocumentsWithoutStream {
         )
       );
 
-      // PROBLEMA: Carrega TODOS os documentos na memória
+      // PROBLEM: Load ALL documents into memory
       spinner.text = "Loading all documents into memory...";
       const startLoad = Date.now();
 
-      const allDocuments = await this.repository.findAll();
+      const findOptions = options.limit ? { limit: options.limit } : {};
+      const allDocuments = await this.repository.findAll(findOptions);
 
       const loadTime = (Date.now() - startLoad) / 1000;
       spinner.succeed(
         chalk.red(
-          `Loaded ${allDocuments.length.toLocaleString()} documents in ${loadTime.toFixed(
+          `✔ Loaded ${allDocuments.length.toLocaleString()} documents in ${loadTime.toFixed(
             2
           )}s`
         )
       );
 
-      // Verificar memória após carregamento
+      // Check memory after loading
       const afterLoadMemory = process.memoryUsage();
       const memoryUsed = Math.round(
         (afterLoadMemory.heapUsed - initialMemory.heapUsed) / 1024 / 1024
@@ -53,15 +78,15 @@ class ProcessDocumentsWithoutStream {
         chalk.red(`💾 Memory spike: +${memoryUsed} MB after loading\n`)
       );
 
-      // Processar todos os documentos
+      // Process all documents
       spinner.start("Processing documents...");
       const startProcess = Date.now();
-      const processedDocuments = [];
+      const processedDocuments: Document[] = [];
 
       for (let i = 0; i < allDocuments.length; i++) {
         const doc = allDocuments[i];
 
-        // Simula processamento pesado
+        // Simulate heavy processing
         const processed = this.heavyProcessing(doc);
         processedDocuments.push(processed);
 
@@ -77,13 +102,13 @@ class ProcessDocumentsWithoutStream {
       const processTime = (Date.now() - startProcess) / 1000;
       spinner.succeed(
         chalk.red(
-          `Processed ${processedDocuments.length.toLocaleString()} documents in ${processTime.toFixed(
+          `✔ Processed ${processedDocuments.length.toLocaleString()} documents in ${processTime.toFixed(
             2
           )}s`
         )
       );
 
-      // Verificar memória final
+      // Check final memory
       const finalMemory = process.memoryUsage();
       const totalMemoryUsed = Math.round(
         (finalMemory.heapUsed - initialMemory.heapUsed) / 1024 / 1024
@@ -105,7 +130,7 @@ class ProcessDocumentsWithoutStream {
         memoryUsed: totalMemoryUsed,
         method: "without-streams",
       };
-    } catch (error) {
+    } catch (error: any) {
       spinner.fail(chalk.red("Processing failed"));
 
       if (
@@ -129,25 +154,31 @@ class ProcessDocumentsWithoutStream {
     }
   }
 
-  heavyProcessing(document) {
-    // Simula processamento computacionalmente intensivo
+  private heavyProcessing(document: Document): Document {
+    // Simulate computationally intensive processing
     const processed = document.process();
 
-    // Simula operações custosas
+    // Simulate expensive operations
     for (let i = 0; i < 1000; i++) {
       Math.sqrt(processed.value * i);
     }
 
-    // Adiciona mais dados para aumentar uso de memória
-    processed.metadata.heavyData = new Array(100).fill(0).map((_, i) => ({
-      index: i,
-      value: Math.random() * 1000,
-      timestamp: new Date(),
-      data: `Heavy processing data ${i}`.repeat(10),
-    }));
+    // Add more data to increase memory usage
+    const processedDoc = new Document({
+      ...processed.toJSON(),
+      metadata: {
+        ...processed.metadata,
+        heavyData: new Array(100).fill(0).map((_, i) => ({
+          index: i,
+          value: Math.random() * 1000,
+          timestamp: new Date(),
+          data: `Heavy processing data ${i}`.repeat(10),
+        })),
+      },
+    });
 
-    return processed;
+    return processedDoc;
   }
 }
 
-module.exports = ProcessDocumentsWithoutStream;
+export default ProcessDocumentsWithoutStream;

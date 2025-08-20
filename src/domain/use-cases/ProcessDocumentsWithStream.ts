@@ -1,16 +1,45 @@
-const { Transform, pipeline } = require("stream");
-const { promisify } = require("util");
-const pipelineAsync = promisify(pipeline);
-const chalk = require("chalk");
-const ora = require("ora");
+import chalk from "chalk";
+import ora from "ora";
+import { IDocumentRepository } from "@domain/repositories/IDocumentRepository";
+import { PerformanceMonitor } from "@infrastructure/monitoring/PerformanceMonitor";
 
-class ProcessDocumentsWithStream {
-  constructor(documentRepository, performanceMonitor) {
+export interface IProcessStreamOptions {
+  limit?: number;
+  batchSize?: number;
+}
+
+export interface IProcessStreamResult {
+  totalProcessed: number;
+  totalTime: number;
+  memoryUsed: number;
+  method: string;
+}
+
+export interface IProcessedDocument {
+  id: number;
+  timestamp: Date;
+  value: number;
+  category: string;
+  metadata: any;
+  processed: boolean;
+  processedAt: Date;
+}
+
+export class ProcessDocumentsWithStream {
+  private repository: IDocumentRepository;
+  private monitor: PerformanceMonitor; // Used by interface, may be used for future monitoring
+
+  constructor(
+    documentRepository: IDocumentRepository,
+    performanceMonitor: PerformanceMonitor
+  ) {
     this.repository = documentRepository;
     this.monitor = performanceMonitor;
   }
 
-  async execute(options = {}) {
+  public async execute(
+    options: IProcessStreamOptions = {}
+  ): Promise<IProcessStreamResult> {
     try {
       console.log(chalk.bold.green("\n🟢 PROCESSING WITH STREAMS\n"));
       console.log(
@@ -19,7 +48,7 @@ class ProcessDocumentsWithStream {
         )
       );
 
-      // Monitor inicial
+      // Initial monitoring
       const initialMemory = process.memoryUsage();
       console.log(
         chalk.gray(
@@ -37,7 +66,7 @@ class ProcessDocumentsWithStream {
         chalk.gray(`Processing limit: ${limit.toLocaleString()} documents\n`)
       );
 
-      // Criar cursor stream do MongoDB
+      // Create MongoDB cursor stream
       const cursorStreamOptions = {
         batchSize: options.batchSize || 1000,
         limit: limit, // Always set a limit
@@ -55,8 +84,8 @@ class ProcessDocumentsWithStream {
       // Process stream directly without complex pipeline
       let processedResults = 0; // Just count, don't store results
 
-      await new Promise((resolve, reject) => {
-        cursorStream.on("data", (chunk) => {
+      await new Promise<void>((resolve, reject) => {
+        cursorStream.on("data", (chunk: any) => {
           try {
             if (processedCount >= limit) {
               cursorStream.destroy();
@@ -82,14 +111,15 @@ class ProcessDocumentsWithStream {
               );
             }
           } catch (error) {
-            reject(error);
+            reject(error as Error);
           }
         });
+
         cursorStream.on("end", () => {
           resolve();
         });
 
-        cursorStream.on("error", (error) => {
+        cursorStream.on("error", (error: Error) => {
           reject(error);
         });
       });
@@ -105,7 +135,7 @@ class ProcessDocumentsWithStream {
         )
       );
 
-      // Verificar memória final
+      // Check final memory
       const finalMemory = process.memoryUsage();
       const totalMemoryUsed = Math.round(
         (finalMemory.heapUsed - initialMemory.heapUsed) / 1024 / 1024
@@ -134,9 +164,9 @@ class ProcessDocumentsWithStream {
     }
   }
 
-  heavyProcessing(document) {
-    // Mesma lógica de processamento pesado
-    const processed = {
+  private heavyProcessing(document: any): IProcessedDocument {
+    // Same heavy processing logic
+    const processed: IProcessedDocument = {
       id: document.id,
       timestamp: document.timestamp,
       value: document.value,
@@ -146,12 +176,12 @@ class ProcessDocumentsWithStream {
       processedAt: new Date(),
     };
 
-    // Simula operações custosas
+    // Simulate expensive operations
     for (let i = 0; i < 1000; i++) {
       Math.sqrt(processed.value * i);
     }
 
-    // Adiciona dados processados
+    // Add processed data
     processed.metadata = {
       ...processed.metadata,
       processedValue: processed.value * 2,
@@ -169,4 +199,4 @@ class ProcessDocumentsWithStream {
   }
 }
 
-module.exports = ProcessDocumentsWithStream;
+export default ProcessDocumentsWithStream;

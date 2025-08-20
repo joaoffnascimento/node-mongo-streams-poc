@@ -1,21 +1,15 @@
-const { MongoClient } = require("mongodb");
-const config = require("../config/environment");
-const logger = require("../monitoring/logger");
+import { MongoClient, Db, Collection } from "mongodb";
+import config from "@infrastructure/config/environment";
+import logger from "@infrastructure/monitoring/logger";
 
-class MongoConnection {
-  constructor() {
-    this.client = null;
-    this.db = null;
-  }
+export class MongoConnection {
+  private client: MongoClient | null = null;
+  private db: Db | null = null;
 
-  async connect() {
+  public async connect(): Promise<Db> {
     try {
-      if (
-        this.client &&
-        this.client.topology &&
-        this.client.topology.isConnected()
-      ) {
-        return this.db;
+      if (this.client && this.isConnected()) {
+        return this.db!;
       }
 
       logger.info("Connecting to MongoDB...");
@@ -24,11 +18,11 @@ class MongoConnection {
 
       this.db = this.client.db();
 
-      // Verificar conexão
+      // Verify connection
       await this.db.admin().ping();
       logger.info("Successfully connected to MongoDB");
 
-      // Registrar event handlers
+      // Register event handlers
       this.setupEventHandlers();
 
       return this.db;
@@ -38,7 +32,13 @@ class MongoConnection {
     }
   }
 
-  setupEventHandlers() {
+  private isConnected(): boolean {
+    return this.client !== null && this.db !== null;
+  }
+
+  private setupEventHandlers(): void {
+    if (!this.client) return;
+
     this.client.on("serverOpening", () =>
       logger.debug("MongoDB connection opening")
     );
@@ -54,11 +54,13 @@ class MongoConnection {
     });
   }
 
-  async disconnect() {
+  public async disconnect(): Promise<void> {
     try {
       if (this.client) {
         logger.info("Closing MongoDB connection...");
         await this.client.close();
+        this.client = null;
+        this.db = null;
         logger.info("MongoDB connection closed");
       }
     } catch (error) {
@@ -66,13 +68,23 @@ class MongoConnection {
     }
   }
 
-  getCollection(name) {
+  public getCollection<T extends Record<string, any> = any>(
+    name: string
+  ): Collection<T> {
     if (!this.db) {
       throw new Error("Database not connected");
     }
-    return this.db.collection(name);
+    return this.db.collection<T>(name);
+  }
+
+  public get database(): Db {
+    if (!this.db) {
+      throw new Error("Database not connected");
+    }
+    return this.db;
   }
 }
 
 // Singleton
-module.exports = new MongoConnection();
+const mongoConnection = new MongoConnection();
+export default mongoConnection;

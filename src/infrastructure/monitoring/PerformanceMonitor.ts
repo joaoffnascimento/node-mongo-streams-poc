@@ -1,9 +1,101 @@
-const { performance, PerformanceObserver } = require("perf_hooks");
-const v8 = require("v8");
-const os = require("os");
+import { performance, PerformanceObserver } from "perf_hooks";
+import * as v8 from "v8";
+import * as os from "os";
 
-class PerformanceMonitor {
-  constructor(name) {
+export interface IMemoryMetrics {
+  rss: number;
+  heapTotal: number;
+  heapUsed: number;
+  external: number;
+  arrayBuffers: number;
+}
+
+export interface ICpuMetrics {
+  user: number;
+  system: number;
+}
+
+export interface ISystemMetrics {
+  loadavg: number[];
+  freemem: number;
+  totalmem: number;
+}
+
+export interface ISample {
+  timestamp: number;
+  memory: IMemoryMetrics;
+  cpu: ICpuMetrics;
+  heap: v8.HeapInfo;
+  system: ISystemMetrics;
+}
+
+export interface IGCEvent {
+  name: string;
+  duration: number;
+  timestamp: number;
+}
+
+export interface IEventLoopLag {
+  lag: number;
+  timestamp: number;
+}
+
+export interface IPerformanceMetrics {
+  startTime: number;
+  startMemory: NodeJS.MemoryUsage;
+  samples: ISample[];
+  gcEvents: IGCEvent[];
+  eventLoopLag: IEventLoopLag[];
+}
+
+export interface IMemoryReport {
+  start: {
+    heapUsed: number;
+    rss: number;
+  };
+  end: {
+    heapUsed: number;
+    rss: number;
+  };
+  max: {
+    heapUsed: number;
+  };
+  min: {
+    heapUsed: number;
+  };
+  average: {
+    heapUsed: number;
+  };
+}
+
+export interface IGCReport {
+  count: number;
+  totalTime: number;
+}
+
+export interface IEventLoopReport {
+  avgLag: number;
+  maxLag: number;
+}
+
+export interface IPerformanceReport {
+  name: string;
+  duration: number;
+  memory: IMemoryReport;
+  gc: IGCReport;
+  eventLoop: IEventLoopReport;
+  samples: ISample[];
+}
+
+export class PerformanceMonitor {
+  private readonly name: string;
+  private metrics: IPerformanceMetrics;
+  private lagInterval?: NodeJS.Timeout;
+  private sampleInterval?: NodeJS.Timeout;
+  private stopped: boolean = false;
+  private lastReport?: IPerformanceReport;
+
+  constructor(name: string) {
     this.name = name;
     this.metrics = {
       startTime: Date.now(),
@@ -17,7 +109,7 @@ class PerformanceMonitor {
     this.startMonitoring();
   }
 
-  setupObservers() {
+  private setupObservers(): void {
     // Monitor Garbage Collection
     const obs = new PerformanceObserver((list) => {
       const entries = list.getEntries();
@@ -37,7 +129,7 @@ class PerformanceMonitor {
     }
   }
 
-  startMonitoring() {
+  private startMonitoring(): void {
     // Monitor event loop lag
     this.lagInterval = setInterval(() => {
       const start = performance.now();
@@ -56,11 +148,11 @@ class PerformanceMonitor {
     }, 5000);
   }
 
-  collectSample() {
+  private collectSample(): ISample {
     const memory = process.memoryUsage();
     const cpuUsage = process.cpuUsage();
 
-    const sample = {
+    const sample: ISample = {
       timestamp: Date.now(),
       memory: {
         rss: Math.round(memory.rss / 1024 / 1024),
@@ -85,15 +177,19 @@ class PerformanceMonitor {
     return sample;
   }
 
-  stop() {
+  public stop(): IPerformanceReport {
     // Prevent double-stopping
     if (this.stopped) {
-      return this.lastReport;
+      return this.lastReport!;
     }
     this.stopped = true;
 
-    clearInterval(this.lagInterval);
-    clearInterval(this.sampleInterval);
+    if (this.lagInterval) {
+      clearInterval(this.lagInterval);
+    }
+    if (this.sampleInterval) {
+      clearInterval(this.sampleInterval);
+    }
 
     // Collect final sample
     this.collectSample();
@@ -168,7 +264,7 @@ class PerformanceMonitor {
     return this.lastReport;
   }
 
-  printReport() {
+  public printReport(): IPerformanceReport {
     const report = this.stop();
 
     console.log("\n" + "═".repeat(60));
@@ -202,4 +298,4 @@ class PerformanceMonitor {
   }
 }
 
-module.exports = PerformanceMonitor;
+export default PerformanceMonitor;
