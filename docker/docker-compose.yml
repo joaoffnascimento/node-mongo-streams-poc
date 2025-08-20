@@ -1,0 +1,35 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb-limited
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: streams_poc
+    volumes:
+      - mongo-data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    deploy:
+      resources:
+        limits:
+          # Simula limitações do Free Tier
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+    command: >
+      mongod
+      --wiredTigerCacheSizeGB 0.25
+      --setParameter maxIncomingConnections=100
+      --setParameter maxIncomingConnectionsOverride=100
+      --slowms 100
+      --profile 1
+
+volumes:
+  mongo-data:
+    driver: local

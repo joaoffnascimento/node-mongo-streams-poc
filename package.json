@@ -1,0 +1,44 @@
+{
+    "name": "mongodb-streams-poc",
+    "version": "1.0.0",
+    "description": "POC demonstrando processamento eficiente com Streams",
+    "main": "src/presentation/cli/index.js",
+    "scripts": {
+        "start": "node src/presentation/cli/index.js",
+        "dev": "nodemon src/presentation/cli/index.js",
+        "seed": "node scripts/seed.js",
+        "benchmark": "node scripts/benchmark.js",
+        "test:no-stream": "node src/presentation/cli/index.js process:no-stream",
+        "test:stream": "node src/presentation/cli/index.js process:stream",
+        "test:compare": "node scripts/compare-results.js",
+        "docker:up": "docker-compose -f docker/docker-compose.yml up -d",
+        "docker:down": "docker-compose -f docker/docker-compose.yml down",
+        "docker:reset": "npm run docker:down && docker volume rm mongodb-streams-poc_mongo-data && npm run docker:up"
+    },
+    "keywords": [
+        "mongodb",
+        "streams",
+        "clean-architecture",
+        "performance"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "mongodb": "^6.3.0",
+        "dotenv": "^16.3.1",
+        "commander": "^11.1.0",
+        "chalk": "^4.1.2",
+        "ora": "^5.4.1",
+        "cli-table3": "^0.6.3",
+        "stream-chain": "^2.2.5",
+        "stream-json": "^1.8.0",
+        "through2": "^4.0.2",
+        "pino": "^8.16.2",
+        "pino-pretty": "^10.2.3"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.2",
+        "jest": "^29.7.0",
+        "@types/node": "^20.10.5"
+    }
+}
