@@ -20,7 +20,6 @@
         "env:destroy": "docker compose -f docker/docker-compose.yml down -v --remove-orphans && docker system prune -f",
         "env:restore": "npm run env:destroy && npm run env:start && sleep 10 && npm run data:seed:quick",
         "env:status": "docker compose -f docker/docker-compose.yml ps",
-        
         "// === SESSION COMMANDS ===": "",
         "session:start": "bash -c 'echo \"🔍 Checking for existing environment...\" && if docker compose -f docker/docker-compose.yml ps -q | grep -q \".\"; then echo \"⚠️  Existing environment found! Destroying...\" && npm run env:destroy; fi && echo \"🚀 Starting fresh environment...\" && npm run env:start && echo \"⏳ Waiting for services to be ready...\" && sleep 15 && echo \"📊 Seeding large dataset (1M documents)...\" && npm run data:seed:large && echo \"✅ Session ready! API: http://localhost:3000 | Coroot: http://localhost:8080\"'",
         "session:quick": "bash -c 'echo \"🔍 Checking for existing environment...\" && if docker compose -f docker/docker-compose.yml ps -q | grep -q \".\"; then echo \"⚠️  Existing environment found! Destroying...\" && npm run env:destroy; fi && echo \"🚀 Starting fresh environment...\" && npm run env:start && echo \"⏳ Waiting for services to be ready...\" && sleep 15 && echo \"📊 Seeding quick dataset (10K documents)...\" && npm run data:seed:quick && echo \"✅ Session ready! API: http://localhost:3000 | Coroot: http://localhost:8080\"'",

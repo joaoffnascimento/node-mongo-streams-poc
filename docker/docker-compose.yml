@@ -86,8 +86,9 @@ services:
       - streams-network
     volumes:
       - coroot-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 
-  # Coroot Node Agent (Collects system metrics)
+  # Coroot Node Agent (Collects system metrics) - Optional
   coroot-node-agent:
     image: ghcr.io/coroot/coroot-node-agent:latest
     container_name: coroot-node-agent
@@ -105,6 +106,8 @@ services:
       - LISTEN=0.0.0.0:80
     networks:
       - streams-network
+    profiles:
+      - full-monitoring
 
   # ClickHouse for storing metrics data
   clickhouse:
