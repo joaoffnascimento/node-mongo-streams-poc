@@ -2,167 +2,161 @@
 
 <div align="center">
 
-![Node.js](https://img.shields.io/badge/Node.js-18+-green?style=for-the-badge&logo=node.js)
+![Node.js](https://img.shields.io/badge/Node.js-20+-green?style=for-the-badge&logo=node.js)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7+-green?style=for-the-badge&logo=mongodb)
 ![Docker](https://img.shields.io/badge/Docker-Required-blue?style=for-the-badge&logo=docker)
 ![Coroot](https://img.shields.io/badge/Coroot-Monitoring-orange?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
+![TypeScript](https://img.shields.io/badge/TypeScript-5+-blue?style=for-the-badge&logo=typescript)
 
-**A comprehensive demonstration of why Streams are essential for production-grade data processing**
+**A production-ready demonstration of why MongoDB Streams are essential for scalable data processing**
 
-[🎯 Quick Start](#-quick-start) • [🌐 Web API](#-web-api) • [📊 Monitoring](#-monitoring--observability) • [🏗️ Architecture](#️-architecture) • [📈 Results](#-performance-results)
+[🎯 Quick Start](#-one-command-setup) • [🧪 What We're Testing](#-what-were-testing) • [📊 Live Results](#-live-demonstration-results) • [🌐 Web API](#-web-api-endpoints) • [📈 Architecture](#️-architecture)
 
 </div>
 
 ---
 
-## 🎯 **What This Project Demonstrates**
+## 🎯 **One Command Setup**
 
-This POC showcases the **dramatic difference** between traditional in-memory data processing and stream-based processing when working with large MongoDB datasets. You'll witness firsthand how traditional approaches fail catastrophically while streams handle millions of documents effortlessly.
-
-### 🔥 **The Problem We're Solving**
-
-Many developers unknowingly write code that works fine in development but **crashes in production** when dealing with real-world data volumes. This project demonstrates:
-
-- **💥 Traditional Approach**: Loads ALL data into memory → OOM crashes
-- **✅ Stream Approach**: Processes data efficiently → Unlimited scalability
-
-### 🎪 **Live Demonstration Results**
-
-| Dataset Size | Traditional Memory   | Streams Memory | Traditional Time | Streams Time | Result                |
-| ------------ | -------------------- | -------------- | ---------------- | ------------ | --------------------- |
-| 10K docs     | 180 MB               | 45 MB          | 3.8s             | 2.3s         | ✅ Both work          |
-| 50K docs     | 850 MB               | 48 MB          | 15.2s            | 8.7s         | ✅ Streams 60% better |
-| 100K docs    | 💥 **OUT OF MEMORY** | 52 MB          | ❌ **CRASH**     | 17.1s        | 🏆 **Streams only**   |
-| 1M docs      | 💥 **OUT OF MEMORY** | 58 MB          | ❌ **CRASH**     | 168.5s       | 🏆 **Streams only**   |
-
----
-
-## 🚀 **Quick Start**
-
-### 🐳 **Docker Deployment (Recommended)**
-
-#### API Only
+Get the entire environment running with production data in one command:
 
 ```bash
-cd docker
-docker-compose up -d mongodb api
+npm run session:start
 ```
 
-#### Full Stack with Monitoring
+**What happens:**
+1. 🔍 **Detects** existing Docker environment
+2. 🧹 **Cleans** up completely if needed  
+3. 🚀 **Starts** MongoDB + API + Coroot monitoring
+4. 📊 **Seeds** 1M documents for real-world testing
+5. ✅ **Ready** in ~3 minutes!
+
+**Access Points:**
+- **🌐 API**: http://localhost:3000
+- **📊 Monitoring**: http://localhost:8080
+
+### Other Session Options
 
 ```bash
-cd docker
-docker-compose --profile full up -d
-```
-
-#### Access Points
-
-- **API**: http://localhost:3000
-- **Coroot Monitoring**: http://localhost:8080
-- **Prometheus**: http://localhost:9090
-- **Grafana**: http://localhost:3001 (admin/admin123)
-
-### 📊 **Test the API**
-
-```bash
-# Generate test data
-curl -X POST http://localhost:3000/api/cli/generate/100000
-
-# Run stream processing
-curl http://localhost:3000/api/cli/report/stream
-
-# Run traditional processing
-curl http://localhost:3000/api/cli/report/traditional
-
-# Compare performance
-curl http://localhost:3000/api/cli/report/comparison
-```
-
-### 💻 **Local Development**
-
-```bash
-# Install dependencies
-npm install
-
-# Set environment variables
-export MONGODB_URI="mongodb://admin:password123@localhost:27017/streams_poc?authSource=admin"
-
-# Run CLI commands
-npm run cli:generate 50000
-npm run cli:stream
-npm run cli:traditional
-
-# Start API server
-npm run api:start
+npm run session:quick  # 10K documents (fast iteration)
+npm run session:demo   # 100K documents + auto benchmark
 ```
 
 ---
 
-## 🌐 **Web API**
+## 🧪 **What We're Testing**
 
-RESTful API service that exposes CLI commands as HTTP endpoints with Prometheus metrics integration.
+This POC demonstrates the **catastrophic difference** between traditional in-memory processing and stream-based processing when dealing with real MongoDB data volumes.
 
-### 📋 **API Endpoints**
+### 💥 **The Problem**
 
-#### Health Check
+Most developers write code that works in development but **crashes in production**:
 
+```typescript
+// ❌ TRADITIONAL APPROACH - Crashes on large datasets
+const allDocuments = await collection.find({}).toArray(); // Loads EVERYTHING into memory
+for (const doc of allDocuments) {
+  await processDocument(doc);
+}
+```
+
+```typescript
+// ✅ STREAM APPROACH - Handles unlimited data
+const cursor = collection.find({}).cursor();
+for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
+  await processDocument(doc);
+}
+```
+
+### 🎯 **Real-World Scenario**
+
+We simulate processing documents for analytics, reports, or data transformations - common tasks that developers encounter daily.
+
+---
+
+## 📊 **Live Demonstration Results**
+
+| Dataset Size | Traditional Memory | Streams Memory | Traditional Time | Streams Time | Result                 |
+|-------------|-------------------|----------------|------------------|--------------|------------------------|
+| 10K docs    | 180 MB           | 45 MB          | 3.8s            | 2.3s         | ✅ Both work           |
+| 50K docs    | 850 MB           | 48 MB          | 15.2s           | 8.7s         | ✅ Streams 60% better  |
+| 100K docs   | 💥 **OOM CRASH** | 52 MB          | ❌ **FAILED**    | 17.1s        | 🏆 **Streams only**    |
+| 1M docs     | 💥 **OOM CRASH** | 58 MB          | ❌ **FAILED**    | 168.5s       | 🏆 **Streams only**    |
+
+### 🔍 **Key Insights**
+
+- **Memory Efficiency**: Streams use **90% less memory**
+- **Scalability**: Streams handle **unlimited datasets**
+- **Performance**: Streams are **40-60% faster** for large data
+- **Reliability**: Traditional approaches crash, streams never do
+
+---
+
+## 🌐 **Web API Endpoints**
+
+### Health & Status
 ```bash
+# Check API health
 curl http://localhost:3000/health
+
+# Check database status and document count
+curl http://localhost:3000/api/status
 ```
 
-#### Data Generation
-
+### Data Management
 ```bash
-# Generate test documents
-curl -X POST http://localhost:3000/api/cli/generate/50000
+# Seed database with documents
+curl -X POST http://localhost:3000/api/seed \
+  -H "Content-Type: application/json" \
+  -d '{"count": 100000}'
+
+# Clear all documents
+curl -X DELETE http://localhost:3000/api/clear
 ```
 
-#### Processing Reports
-
+### Performance Testing
 ```bash
-# Stream processing (memory efficient)
-curl http://localhost:3000/api/cli/report/stream
+# Test stream processing
+curl -X POST http://localhost:3000/api/process/stream \
+  -H "Content-Type: application/json" \
+  -d '{"limit": 50000}'
 
-# Traditional processing (memory intensive)
-curl http://localhost:3000/api/cli/report/traditional
+# Test traditional processing
+curl -X POST http://localhost:3000/api/process/no-stream \
+  -H "Content-Type: application/json" \
+  -d '{"limit": 50000}'
 
-# Performance comparison
-curl http://localhost:3000/api/cli/report/comparison
+# Compare both approaches
+curl -X POST http://localhost:3000/api/compare \
+  -H "Content-Type: application/json" \
+  -d '{"limit": 50000}'
 ```
 
-#### Metrics
-
-```bash
-# Prometheus metrics
-curl http://localhost:3000/metrics
-```
-
-### 📊 **API Response Example**
+### 📋 **API Response Example**
 
 ```json
 {
-  "type": "comparison",
-  "timestamp": "2025-08-20T19:30:00.000Z",
-  "results": {
-    "stream": {
-      "documentsProcessed": 100000,
-      "memoryUsage": {
-        "peak": "52.43 MB",
-        "final": "45.12 MB"
-      },
-      "executionTime": "17.1s",
+  "success": true,
+  "data": {
+    "type": "COMPARISON",
+    "timestamp": "2025-01-21T15:30:00.000Z",
+    "streamResult": {
+      "totalProcessed": 100000,
+      "totalTime": 17100,
+      "memoryUsed": 52.43,
+      "method": "MongoDB Streaming",
       "success": true
     },
-    "traditional": {
-      "documentsProcessed": 0,
-      "memoryUsage": {
-        "peak": "OutOfMemory",
-        "final": "N/A"
-      },
-      "executionTime": "N/A",
-      "success": false,
-      "error": "JavaScript heap out of memory"
+    "traditionalResult": {
+      "totalProcessed": 0,
+      "error": "JavaScript heap out of memory",
+      "method": "Traditional Loading",
+      "success": false
+    },
+    "comparison": {
+      "winner": "Stream",
+      "memoryDifference": "∞% better",
+      "timeDifference": "Traditional failed"
     }
   }
 }
@@ -172,246 +166,244 @@ curl http://localhost:3000/metrics
 
 ## 📊 **Monitoring & Observability**
 
-Complete monitoring stack with **Coroot**, **Prometheus**, and **Grafana** for comprehensive observability.
+### 🎛️ **Coroot Dashboard** 
+Visit http://localhost:8080 to see:
+- **Real-time memory usage** during processing
+- **Container resource consumption**
+- **API performance metrics**
+- **Database connection monitoring**
+- **System-wide observability**
 
-### 🎛️ **Docker Profiles**
+### 📈 **What You'll See**
 
-```bash
-# API only (minimal)
-docker-compose up -d mongodb api
-
-# With monitoring
-docker-compose --profile monitoring up -d
-
-# Full stack (everything)
-docker-compose --profile full up -d
-```
-
-### 📋 **Services Overview**
-
-| Service               | Port      | Description           | Profile    |
-| --------------------- | --------- | --------------------- | ---------- |
-| **mongodb**           | 27017     | MongoDB 7 Database    | core       |
-| **api**               | 3000      | Express.js Web API    | core       |
-| **coroot**            | 8080      | Monitoring Dashboard  | monitoring |
-| **prometheus**        | 9090      | Metrics Collection    | monitoring |
-| **grafana**           | 3001      | Additional Dashboards | monitoring |
-| **mongodb-exporter**  | 9216      | MongoDB Metrics       | monitoring |
-| **node-exporter**     | 9100      | System Metrics        | monitoring |
-| **cadvisor**          | 8081      | Container Metrics     | monitoring |
-| **clickhouse**        | 9000/8123 | Metrics Storage       | monitoring |
-| **coroot-node-agent** | 8082      | System Agent          | monitoring |
-
-### ⚙️ **Configuration**
-
-Environment variables in `/docker/.env`:
-
-```env
-# Database Configuration
-MONGO_USERNAME=admin
-MONGO_PASSWORD=password123
-MONGO_DATABASE=streams_poc
-MONGO_PORT=27017
-
-# API Configuration
-API_PORT=3000
-NODE_ENV=production
-LOG_LEVEL=info
-
-# Grafana Configuration
-GRAFANA_PASSWORD=admin123
-```
-
-### 🔍 **Monitoring Features**
-
-- **Real-time memory usage visualization**
-- **Performance comparison charts**
-- **Container-level insights**
-- **Database monitoring**
-- **HTTP request metrics**
-- **Custom processing metrics**
+1. **Memory Spikes**: Traditional approach shows massive memory consumption
+2. **Steady Usage**: Stream approach maintains consistent low memory
+3. **Container Metrics**: CPU, memory, network usage per service
+4. **Performance Trends**: Processing speed comparisons over time
 
 ---
 
 ## 🏗️ **Architecture**
 
-### 📁 **Project Structure**
+### 📁 **Clean Architecture Structure**
 
 ```
-streams-poc/
-├── 🐳 docker/                        # Docker configuration
-│   ├── docker-compose.yml            # Unified stack with monitoring
-│   ├── .env                          # Environment variables
-│   └── monitoring/                   # Monitoring configurations
-│       ├── prometheus.yml            # Prometheus config
-│       ├── clickhouse-config.xml     # ClickHouse config
-│       └── grafana/                  # Grafana dashboards
-├── 🔧 src/                           # Source code
-│   ├── domain/                       # Business logic
-│   │   ├── entities/                 # Domain entities
-│   │   ├── repositories/             # Repository interfaces
-│   │   └── use-cases/                # Application use cases
-│   ├── infrastructure/               # External dependencies
-│   │   ├── database/                 # MongoDB implementation
-│   │   └── monitoring/               # Metrics & logging
-│   └── presentation/                 # User interfaces
-│       ├── cli/                      # Command-line interface
-│       └── api/                      # Web API (REST endpoints)
-├── 📦 package.json                   # Dependencies & scripts
-└── 📖 README.md                      # This file
+mongodb-streams-poc/
+├── 🐳 docker/                    # Docker environment
+│   ├── docker-compose.yml        # MongoDB + API + Coroot
+│   ├── mongo-init.js             # Database initialization
+│   └── monitoring/
+│       └── clickhouse-config.xml # Coroot data storage
+├── 🔧 src/
+│   ├── domain/                   # Business logic (Clean Architecture)
+│   │   ├── entities/             # Document entity
+│   │   ├── repositories/         # Repository interfaces
+│   │   └── use-cases/           # Processing use cases
+│   ├── infrastructure/          # External dependencies
+│   │   ├── database/            # MongoDB implementation
+│   │   └── monitoring/          # Logging and performance
+│   └── presentation/            # User interfaces
+│       ├── api/                 # REST API (Express.js)
+│       └── cli/                 # Command-line interface
+├── 📦 package.json              # Smart scripts for environment management
+└── 📊 scripts/                  # Benchmark and seeding scripts
 ```
 
-### 🔄 **Stream vs Traditional Processing**
+### 🔄 **Processing Implementations**
 
-#### Stream Processing (Recommended)
-
+**Stream Processing (`ProcessDocumentsWithStream.ts`)**
 ```typescript
-// Memory-efficient approach
-const cursor = collection.find({}).cursor();
-for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
-  await processDocument(doc);
+async execute({ limit }: { limit: number }) {
+  const cursor = this.repository.findWithCursor({ limit });
+  let processedCount = 0;
+  
+  for (let document = await cursor.next(); document != null; document = await cursor.next()) {
+    await this.processDocument(document);
+    processedCount++;
+  }
+  
+  return { processedCount, memoryUsage: this.monitor.getMemoryUsage() };
 }
 ```
 
-#### Traditional Processing (Problematic)
-
+**Traditional Processing (`ProcessDocumentsWithoutStream.ts`)**
 ```typescript
-// Memory-intensive approach - CRASHES on large datasets
-const allDocs = await collection.find({}).toArray(); // ⚠️ Loads everything into memory
-for (const doc of allDocs) {
-  await processDocument(doc);
+async execute({ limit }: { limit: number }) {
+  const documents = await this.repository.findAll({ limit }); // ⚠️ Loads all into memory
+  let processedCount = 0;
+  
+  for (const document of documents) {
+    await this.processDocument(document);
+    processedCount++;
+  }
+  
+  return { processedCount, memoryUsage: this.monitor.getMemoryUsage() };
 }
 ```
 
 ---
 
-## 📈 **Performance Results**
+## 🚀 **Development Scripts**
 
-### 🎯 **Key Findings**
+### Environment Management
+```bash
+npm run env:start     # Start environment
+npm run env:stop      # Stop environment  
+npm run env:destroy   # Complete cleanup
+npm run env:status    # Check status
+```
 
-1. **Memory Efficiency**: Streams use **90% less memory** than traditional approaches
-2. **Scalability**: Streams handle **unlimited dataset sizes**, traditional approaches crash
-3. **Performance**: Streams are **40-60% faster** for large datasets
-4. **Reliability**: Streams never crash due to memory constraints
+### Data Management  
+```bash
+npm run data:status       # Check database status
+npm run data:seed:quick   # 10K documents
+npm run data:seed:medium  # 100K documents
+npm run data:seed:large   # 1M documents
+npm run data:clear        # Clear all data
+```
 
-### 📊 **Detailed Metrics**
+### Testing & Benchmarks
+```bash
+npm run test:stream       # Test streaming approach
+npm run test:traditional  # Test traditional approach
+npm run test:compare      # Compare both methods
+npm run benchmark         # Full performance benchmark
+```
 
-#### Memory Usage Comparison
-
-- **10K Documents**: Stream 45MB vs Traditional 180MB (75% reduction)
-- **50K Documents**: Stream 48MB vs Traditional 850MB (94% reduction)
-- **100K+ Documents**: Stream 52MB vs Traditional **CRASH** (∞% better)
-
-#### Processing Time Comparison
-
-- **Small datasets** (< 10K): Traditional slightly faster due to overhead
-- **Medium datasets** (10K-50K): Streams 40% faster
-- **Large datasets** (50K+): Streams only viable option
+### Monitoring & Logs
+```bash
+npm run logs:all     # All service logs
+npm run logs:api     # API server logs
+npm run logs:db      # MongoDB logs
+npm run logs:coroot  # Monitoring logs
+npm run monitor:open # Open Coroot dashboard
+```
 
 ---
 
-## 🛠️ **Development**
+## 🎪 **Perfect for Demonstrations**
 
-### 📋 **Available Scripts**
+### 🎯 **Demo Script** (10-minute presentation)
 
-```bash
-# CLI Commands
-npm run cli:generate <count>    # Generate test data
-npm run cli:stream             # Run stream processing
-npm run cli:traditional        # Run traditional processing
-npm run cli:compare            # Compare both approaches
+1. **🚀 Start Environment** (2 min)
+   ```bash
+   npm run session:demo
+   ```
 
-# API Commands
-npm run api:start              # Start API server
-npm run api:dev                # Start API in development mode
+2. **📊 Show Small Dataset Success** (2 min)
+   - Navigate to http://localhost:3000
+   - Show API documentation
+   - Run comparison with 10K documents
 
-# Development
-npm run build                  # Build TypeScript
-npm run test                   # Run tests
-npm run lint                   # Lint code
-```
+3. **💥 Demonstrate Traditional Failure** (3 min)
+   - Scale to 100K documents
+   - Watch traditional approach crash
+   - Show streams continuing to work
 
-### 🔧 **Environment Setup**
+4. **📈 Live Monitoring** (2 min)
+   - Open Coroot dashboard: http://localhost:8080
+   - Show memory usage patterns
+   - Explain production implications
 
-#### Required Environment Variables
+5. **🎯 Key Takeaways** (1 min)
+   - Memory efficiency matters
+   - Streams enable unlimited scalability
+   - Production reliability is critical
 
-```bash
-MONGODB_URI=mongodb://admin:password123@localhost:27017/streams_poc?authSource=admin
-NODE_ENV=development
-LOG_LEVEL=debug
-```
+### 📊 **Visual Impact**
 
-#### Docker Environment
+- **Real-time Graphs**: Memory spikes vs steady usage
+- **Error Messages**: Out-of-memory crashes in logs
+- **Performance Metrics**: Side-by-side comparisons
+- **Production Readiness**: Monitoring and observability
 
-All configuration is handled via `/docker/.env` file when using Docker.
+---
+
+## 🛠️ **Technology Stack**
+
+- **🏗️ Language**: TypeScript + Node.js 20
+- **🗄️ Database**: MongoDB 7 with cursor streaming
+- **🌐 API**: Express.js with comprehensive error handling
+- **📊 Monitoring**: Coroot + ClickHouse for observability
+- **🐳 Deployment**: Docker Compose with smart profiles
+- **🧪 Architecture**: Clean Architecture with dependency injection
+- **📈 Performance**: Memory monitoring and benchmarking tools
 
 ---
 
 ## 🚨 **Troubleshooting**
 
-### MongoDB Connection Issues
-
+### Environment Issues
 ```bash
-# Check MongoDB logs
-docker-compose logs mongodb
+# Clean restart
+npm run env:destroy && npm run env:start
 
-# Test connection
-docker-compose exec mongodb mongosh -u admin -p password123 --authenticationDatabase admin
+# Check all services
+npm run env:status
+
+# View logs
+npm run logs:all
 ```
 
-### API Performance Issues
-
-1. Check metrics: http://localhost:3000/metrics
-2. View Coroot dashboard: http://localhost:8080
-3. Check API logs: `docker-compose logs api`
-
-### Monitoring Stack Issues
-
+### Performance Issues
 ```bash
-# Restart monitoring services
-docker-compose --profile monitoring restart
+# Check API health
+curl http://localhost:3000/health
 
-# Check Prometheus targets
-curl http://localhost:9090/api/v1/targets
+# Monitor resources
+open http://localhost:8080
+
+# Check database
+npm run data:status
+```
+
+### Docker Issues
+```bash
+# Clean Docker completely
+docker system prune -a --volumes
+
+# Restart environment
+npm run session:start
 ```
 
 ---
 
-## 🎊 **Perfect for Presentations**
+## 🎊 **Production Lessons**
 
-This project is ideal for demonstrating the critical importance of proper data processing patterns in production environments:
+This POC teaches critical production patterns:
 
-### 🎪 **Demo Script**
+### ✅ **Do This**
+- Always use cursors/streams for large datasets
+- Monitor memory usage in production
+- Implement proper error handling
+- Use observability tools (Coroot)
+- Test with realistic data volumes
 
-1. **Start with small dataset** (10K) - show both approaches work
-2. **Scale to medium dataset** (50K) - show streams becoming superior
-3. **Scale to large dataset** (100K+) - show traditional approach failing
-4. **Show monitoring dashboards** - visualize the memory difference
-5. **Explain production implications** - why this matters in real systems
-
-### 📊 **Visual Impact**
-
-- **Coroot Dashboard**: Real-time memory usage graphs
-- **Grafana Charts**: Performance comparison visualizations
-- **Terminal Output**: Detailed execution reports with memory stats
-- **API Responses**: JSON-formatted performance data
+### ❌ **Avoid This**
+- Loading large datasets with `.toArray()`
+- Assuming development data represents production
+- Ignoring memory constraints
+- Missing performance monitoring
+- Skipping scalability testing
 
 ---
 
-## 📝 **License**
+## 📜 **License**
 
-MIT License - see LICENSE file for details.
+MIT License - Feel free to use this for education, presentations, or production guidance.
 
 ---
 
 <div align="center">
 
-**Ready to see the difference between stream and traditional processing?**
+**🚀 Ready to see why streams matter in production?**
 
 ```bash
-cd docker && docker-compose --profile full up -d
+npm run session:start
 ```
 
-**Then visit http://localhost:8080 for live monitoring!** 🚀
+**Then watch the magic happen at http://localhost:8080** ✨
+
+*"In production, memory management isn't optional—it's survival."*
 
 </div>
