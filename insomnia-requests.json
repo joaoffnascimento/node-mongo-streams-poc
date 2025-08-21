@@ -1,0 +1,242 @@
+{
+    "_type": "export",
+    "__export_format": 4,
+    "__export_date": "2025-08-21T00:00:00.000Z",
+    "__export_source": "insomnia.desktop.app:v2023.5.8",
+    "resources": [
+        {
+            "_id": "req_health_check",
+            "parentId": "fld_main",
+            "modified": 1692576000000,
+            "created": 1692576000000,
+            "url": "{{ _.base_url }}/health",
+            "name": "Health Check",
+            "description": "Check if the server is running",
+            "method": "GET",
+            "body": {},
+            "parameters": [],
+            "headers": [],
+            "authentication": {},
+            "metaSortKey": -1692576000000,
+            "isPrivate": false,
+            "settingStoreCookies": true,
+            "settingSendCookies": true,
+            "settingDisableRenderRequestBody": false,
+            "settingEncodeUrl": true,
+            "settingRebuildPath": true,
+            "settingFollowRedirects": "global",
+            "_type": "request"
+        },
+        {
+            "_id": "req_get_status",
+            "parentId": "fld_main",
+            "modified": 1692576000000,
+            "created": 1692576000000,
+            "url": "{{ _.base_url }}/api/status",
+            "name": "Get Document Status",
+            "description": "Get the current status of documents in the database",
+            "method": "GET",
+            "body": {},
+            "parameters": [],
+            "headers": [],
+            "authentication": {},
+            "metaSortKey": -1692575000000,
+            "isPrivate": false,
+            "settingStoreCookies": true,
+            "settingSendCookies": true,
+            "settingDisableRenderRequestBody": false,
+            "settingEncodeUrl": true,
+            "settingRebuildPath": true,
+            "settingFollowRedirects": "global",
+            "_type": "request"
+        },
+        {
+            "_id": "req_process_stream",
+            "parentId": "fld_main",
+            "modified": 1692576000000,
+            "created": 1692576000000,
+            "url": "{{ _.base_url }}/api/process/stream",
+            "name": "Process Documents with Stream",
+            "description": "Process documents using streaming approach for memory efficiency",
+            "method": "POST",
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"limit\": 10000\n}"
+            },
+            "parameters": [],
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {},
+            "metaSortKey": -1692574000000,
+            "isPrivate": false,
+            "settingStoreCookies": true,
+            "settingSendCookies": true,
+            "settingDisableRenderRequestBody": false,
+            "settingEncodeUrl": true,
+            "settingRebuildPath": true,
+            "settingFollowRedirects": "global",
+            "_type": "request"
+        },
+        {
+            "_id": "req_process_traditional",
+            "parentId": "fld_main",
+            "modified": 1692576000000,
+            "created": 1692576000000,
+            "url": "{{ _.base_url }}/api/process/traditional",
+            "name": "Process Documents Traditional",
+            "description": "Process documents using traditional approach (load all in memory)",
+            "method": "POST",
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"limit\": 10000\n}"
+            },
+            "parameters": [],
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {},
+            "metaSortKey": -1692573000000,
+            "isPrivate": false,
+            "settingStoreCookies": true,
+            "settingSendCookies": true,
+            "settingDisableRenderRequestBody": false,
+            "settingEncodeUrl": true,
+            "settingRebuildPath": true,
+            "settingFollowRedirects": "global",
+            "_type": "request"
+        },
+        {
+            "_id": "req_compare_processing",
+            "parentId": "fld_main",
+            "modified": 1692576000000,
+            "created": 1692576000000,
+            "url": "{{ _.base_url }}/api/compare",
+            "name": "Compare Processing Methods",
+            "description": "Compare stream vs traditional processing performance",
+            "method": "POST",
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"limit\": 10000\n}"
+            },
+            "parameters": [],
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {},
+            "metaSortKey": -1692572000000,
+            "isPrivate": false,
+            "settingStoreCookies": true,
+            "settingSendCookies": true,
+            "settingDisableRenderRequestBody": false,
+            "settingEncodeUrl": true,
+            "settingRebuildPath": true,
+            "settingFollowRedirects": "global",
+            "_type": "request"
+        },
+        {
+            "_id": "req_seed_database",
+            "parentId": "fld_main",
+            "modified": 1692576000000,
+            "created": 1692576000000,
+            "url": "{{ _.base_url }}/api/seed",
+            "name": "Seed Database",
+            "description": "Populate the database with test documents",
+            "method": "POST",
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"totalDocuments\": 100000,\n  \"batchSize\": 5000\n}"
+            },
+            "parameters": [],
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {},
+            "metaSortKey": -1692571000000,
+            "isPrivate": false,
+            "settingStoreCookies": true,
+            "settingSendCookies": true,
+            "settingDisableRenderRequestBody": false,
+            "settingEncodeUrl": true,
+            "settingRebuildPath": true,
+            "settingFollowRedirects": "global",
+            "_type": "request"
+        },
+        {
+            "_id": "req_clear_data",
+            "parentId": "fld_main",
+            "modified": 1692576000000,
+            "created": 1692576000000,
+            "url": "{{ _.base_url }}/api/data",
+            "name": "Clear All Data",
+            "description": "Remove all documents from the database",
+            "method": "DELETE",
+            "body": {},
+            "parameters": [],
+            "headers": [],
+            "authentication": {},
+            "metaSortKey": -1692570000000,
+            "isPrivate": false,
+            "settingStoreCookies": true,
+            "settingSendCookies": true,
+            "settingDisableRenderRequestBody": false,
+            "settingEncodeUrl": true,
+            "settingRebuildPath": true,
+            "settingFollowRedirects": "global",
+            "_type": "request"
+        },
+        {
+            "_id": "fld_main",
+            "parentId": "wrk_main",
+            "modified": 1692576000000,
+            "created": 1692576000000,
+            "name": "Document Processing API",
+            "description": "Streams vs Traditional Processing Comparison",
+            "environment": {},
+            "environmentPropertyOrder": null,
+            "metaSortKey": -1692576000000,
+            "_type": "request_group"
+        },
+        {
+            "_id": "wrk_main",
+            "parentId": null,
+            "modified": 1692576000000,
+            "created": 1692576000000,
+            "name": "Node MongoDB Streams PoC",
+            "description": "Performance comparison between MongoDB streams and traditional processing",
+            "scope": "collection",
+            "_type": "workspace"
+        },
+        {
+            "_id": "env_main",
+            "parentId": "wrk_main",
+            "modified": 1692576000000,
+            "created": 1692576000000,
+            "name": "Base Environment",
+            "data": {
+                "base_url": "http://localhost:3000"
+            },
+            "dataPropertyOrder": {
+                "&": [
+                    "base_url"
+                ]
+            },
+            "color": null,
+            "isPrivate": false,
+            "metaSortKey": 1692576000000,
+            "_type": "environment"
+        }
+    ]
+}
