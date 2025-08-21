@@ -96,9 +96,9 @@
             "parentId": "fld_2",
             "created": 1690000000010,
             "modified": 1690000000010,
-            "name": "Process without Streams",
+            "name": "Process Traditional",
             "method": "POST",
-            "url": "{{ base_url }}/api/process/no-stream",
+            "url": "{{ base_url }}/api/process/traditional",
             "body": {
                 "mimeType": "application/json",
                 "text": "{\n  \"limit\": 10000\n}"
@@ -120,27 +120,13 @@
             "_type": "request"
         },
         {
-            "_id": "req_seed",
-            "parentId": "fld_3",
-            "created": 1690000000012,
-            "modified": 1690000000012,
-            "name": "Seed Database",
-            "method": "POST",
-            "url": "{{ base_url }}/api/seed",
-            "body": {
-                "mimeType": "application/json",
-                "text": "{\n  \"count\": 100000\n}"
-            },
-            "_type": "request"
-        },
-        {
             "_id": "req_clear",
             "parentId": "fld_3",
             "created": 1690000000013,
             "modified": 1690000000013,
             "name": "Clear Database",
             "method": "DELETE",
-            "url": "{{ base_url }}/api/clear",
+            "url": "{{ base_url }}/api/data",
             "_type": "request"
         }
     ]

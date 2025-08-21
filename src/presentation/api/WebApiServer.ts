@@ -1,18 +1,18 @@
 import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
-import { CliApiService } from "./CliApiService";
+import { StreamsController } from "./StreamsController";
 import logger from "@infrastructure/monitoring/logger";
 
 export class WebApiServer {
   private app: Application;
-  private apiService: CliApiService;
+  private streamsController: StreamsController;
   private port: number;
 
   constructor(port: number = 3000) {
     this.app = express();
     this.port = port;
-    this.apiService = new CliApiService();
+    this.streamsController = new StreamsController();
 
     this.setupMiddleware();
     this.setupRoutes();
@@ -63,85 +63,62 @@ export class WebApiServer {
       });
     });
 
-
     // API documentation
     this.app.get("/", (req: Request, res: Response) => {
       res.json({
         name: "MongoDB Streams POC API",
         version: "1.0.0",
-        description: "CLI commands transformed into HTTP API endpoints",
+        description:
+          "Demonstration of MongoDB streaming vs traditional processing",
         endpoints: {
           "GET /health": "Health check",
           "GET /api/status": "Database status and document count",
-          "POST /api/process/stream": "Process documents with streams",
-          "POST /api/process/no-stream": "Process documents without streams",
+          "POST /api/process/stream": "Process documents using MongoDB streams",
+          "POST /api/process/traditional":
+            "Process documents using traditional approach",
           "POST /api/compare": "Compare both processing methods",
-          "POST /api/seed": "Seed database with documents",
-          "DELETE /api/clear": "Clear all documents from database",
+          "DELETE /api/data": "Clear all documents from database",
         },
         examples: {
-          "Process with streams":
-            'POST /api/process/stream with body: {"limit": 10000}',
-          "Compare methods": 'POST /api/compare with body: {"limit": 5000}',
-          "Seed database": 'POST /api/seed with body: {"count": 100000}',
+          "Process with streams": {
+            method: "POST",
+            url: "/api/process/stream",
+            body: { limit: 10000 },
+          },
+          "Process traditionally": {
+            method: "POST",
+            url: "/api/process/traditional",
+            body: { limit: 10000 },
+          },
+          "Compare methods": {
+            method: "POST",
+            url: "/api/compare",
+            body: { limit: 5000 },
+          },
         },
       });
     });
 
-    // CLI command routes
+    // API routes
     this.app.get(
       "/api/status",
-      this.apiService.getStatus.bind(this.apiService)
+      this.streamsController.getStatus.bind(this.streamsController)
     );
     this.app.post(
       "/api/process/stream",
-      async (req: Request, res: Response) => {
-        try {
-          const { limit = 10000 } = req.body;
-          const result = await this.apiService.processWithStream(limit);
-          res.json(result);
-        } catch (error) {
-          res.status(500).json({
-            success: false,
-            error: error instanceof Error ? error.message : "Unknown error",
-          });
-        }
-      }
+      this.streamsController.processWithStream.bind(this.streamsController)
     );
     this.app.post(
-      "/api/process/no-stream",
-      async (req: Request, res: Response) => {
-        try {
-          const { limit = 10000 } = req.body;
-          const result = await this.apiService.processWithoutStream(limit);
-          res.json(result);
-        } catch (error) {
-          res.status(500).json({
-            success: false,
-            error: error instanceof Error ? error.message : "Unknown error",
-          });
-        }
-      }
+      "/api/process/traditional",
+      this.streamsController.processWithoutStream.bind(this.streamsController)
     );
-    this.app.post("/api/compare", async (req: Request, res: Response) => {
-      try {
-        const { limit = 10000 } = req.body;
-        const result = await this.apiService.compareProcessing(limit);
-        res.json(result);
-      } catch (error) {
-        res.status(500).json({
-          success: false,
-          error: error instanceof Error ? error.message : "Unknown error",
-        });
-      }
-    });
     this.app.post(
-      "/api/seed",
-      this.apiService.seedDatabase.bind(this.apiService)
+      "/api/compare",
+      this.streamsController.compareProcessing.bind(this.streamsController)
     );
     this.app.delete(
-      "/api/clear",
-      this.apiService.clearDatabase.bind(this.apiService)
+      "/api/data",
+      this.streamsController.clearData.bind(this.streamsController)
     );
 
     // 404 handler
@@ -155,10 +132,9 @@ export class WebApiServer {
           "GET /health",
           "GET /api/status",
           "POST /api/process/stream",
-          "POST /api/process/no-stream",
+          "POST /api/process/traditional",
           "POST /api/compare",
-          "POST /api/seed",
-          "DELETE /api/clear",
+          "DELETE /api/data",
         ],
       });
     });
@@ -193,33 +169,35 @@ export class WebApiServer {
     return new Promise((resolve, reject) => {
       try {
         const server = this.app.listen(this.port, () => {
-          logger.info("🚀 Web API Server started", {
+          logger.info("🚀 MongoDB Streams POC API started", {
             port: this.port,
             environment: process.env.NODE_ENV || "development",
             pid: process.pid,
-            endpoints: {
-              health: `http://localhost:${this.port}/health`,
-              status: `http://localhost:${this.port}/api/status`,
-              docs: `http://localhost:${this.port}/`,
-            },
           });
 
+          console.log(`\n🚀 MongoDB Streams POC API Server`);
+          console.log(`📡 Port: ${this.port}`);
           console.log(
-            `\n🚀 MongoDB Streams POC API is running on port ${this.port}`
+            `🌍 Environment: ${process.env.NODE_ENV || "development"}`
           );
-          console.log(`📋 API Documentation: http://localhost:${this.port}/`);
-          console.log(`❤️  Health Check: http://localhost:${this.port}/health`);
-          console.log(
-            `📊 Database Status: http://localhost:${this.port}/api/status\n`
-          );
+          console.log(`📚 Documentation: http://localhost:${this.port}/`);
+          console.log(`❤️  Health: http://localhost:${this.port}/health`);
+          console.log(`📊 Status: http://localhost:${this.port}/api/status`);
 
           resolve();
         });
 
-        // server.on('error', (error: Error) => {
-        //   logger.error('Server startup error', { error: error.message });
-        //   reject(error);
-        // });
+        server.on("error", (error: any) => {
+          if (error.code === "EADDRINUSE") {
+            logger.error(`Port ${this.port} is already in use`, {
+              port: this.port,
+            });
+            reject(new Error(`Port ${this.port} is already in use`));
+          } else {
+            logger.error("Server error", { error: error.message });
+            reject(error);
+          }
+        });
       } catch (error) {
         logger.error("Failed to start server", { error });
         reject(error);
@@ -227,19 +205,16 @@ export class WebApiServer {
     });
   }
 
-  private shutdown(): void {
-    logger.info("Shutting down server gracefully...");
+  private async shutdown(): Promise<void> {
+    logger.info("🛑 Shutting down Web API Server...");
 
-    this.apiService
-      .cleanup()
-      .then(() => {
-        logger.info("API service cleanup completed");
-        process.exit(0);
-      })
-      .catch((error) => {
-        logger.error("Error during cleanup", { error });
-        process.exit(1);
-      });
+    try {
+      // Graceful shutdown logic here
+      process.exit(0);
+    } catch (error) {
+      logger.error("Error during shutdown", { error });
+      process.exit(1);
+    }
   }
 
   public getApp(): Application {
