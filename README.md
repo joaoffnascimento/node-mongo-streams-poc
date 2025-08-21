@@ -5,7 +5,6 @@
 ![Node.js](https://img.shields.io/badge/Node.js-20+-green?style=for-the-badge&logo=node.js)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7+-green?style=for-the-badge&logo=mongodb)
 ![Docker](https://img.shields.io/badge/Docker-Required-blue?style=for-the-badge&logo=docker)
-![Coroot](https://img.shields.io/badge/Coroot-Monitoring-orange?style=for-the-badge)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5+-blue?style=for-the-badge&logo=typescript)
 
 **A production-ready demonstration of why MongoDB Streams are essential for scalable data processing**
@@ -27,13 +26,12 @@ npm run session:start
 **What happens:**
 1. 🔍 **Detects** existing Docker environment
 2. 🧹 **Cleans** up completely if needed  
-3. 🚀 **Starts** MongoDB + API + Coroot monitoring
+3. 🚀 **Starts** MongoDB + API
 4. 📊 **Seeds** 1M documents for real-world testing
 5. ✅ **Ready** in ~3 minutes!
 
 **Access Points:**
 - **🌐 API**: http://localhost:3000
-- **📊 Monitoring**: http://localhost:8080
 
 ### Other Session Options
 
@@ -164,25 +162,6 @@ curl -X POST http://localhost:3000/api/compare \
 
 ---
 
-## 📊 **Monitoring & Observability**
-
-### 🎛️ **Coroot Dashboard** 
-Visit http://localhost:8080 to see:
-- **Real-time memory usage** during processing
-- **Container resource consumption**
-- **API performance metrics**
-- **Database connection monitoring**
-- **System-wide observability**
-
-### 📈 **What You'll See**
-
-1. **Memory Spikes**: Traditional approach shows massive memory consumption
-2. **Steady Usage**: Stream approach maintains consistent low memory
-3. **Container Metrics**: CPU, memory, network usage per service
-4. **Performance Trends**: Processing speed comparisons over time
-
----
-
 ## 🏗️ **Architecture**
 
 ### 📁 **Clean Architecture Structure**
@@ -190,10 +169,8 @@ Visit http://localhost:8080 to see:
 ```
 mongodb-streams-poc/
 ├── 🐳 docker/                    # Docker environment
-│   ├── docker-compose.yml        # MongoDB + API + Coroot
-│   ├── mongo-init.js             # Database initialization
-│   └── monitoring/
-│       └── clickhouse-config.xml # Coroot data storage
+│   ├── docker-compose.yml        # MongoDB + API
+│   └── mongo-init.js             # Database initialization
 ├── 🔧 src/
 │   ├── domain/                   # Business logic (Clean Architecture)
 │   │   ├── entities/             # Document entity
@@ -275,8 +252,6 @@ npm run benchmark         # Full performance benchmark
 npm run logs:all     # All service logs
 npm run logs:api     # API server logs
 npm run logs:db      # MongoDB logs
-npm run logs:coroot  # Monitoring logs
-npm run monitor:open # Open Coroot dashboard
 ```
 
 ---
@@ -300,12 +275,7 @@ npm run monitor:open # Open Coroot dashboard
    - Watch traditional approach crash
    - Show streams continuing to work
 
-4. **📈 Live Monitoring** (2 min)
-   - Open Coroot dashboard: http://localhost:8080
-   - Show memory usage patterns
-   - Explain production implications
-
-5. **🎯 Key Takeaways** (1 min)
+4. **🎯 Key Takeaways** (1 min)
    - Memory efficiency matters
    - Streams enable unlimited scalability
    - Production reliability is critical
@@ -324,8 +294,7 @@ npm run monitor:open # Open Coroot dashboard
 - **🏗️ Language**: TypeScript + Node.js 20
 - **🗄️ Database**: MongoDB 7 with cursor streaming
 - **🌐 API**: Express.js with comprehensive error handling
-- **📊 Monitoring**: Coroot + ClickHouse for observability
-- **🐳 Deployment**: Docker Compose with smart profiles
+- ** Deployment**: Docker Compose with smart profiles
 - **🧪 Architecture**: Clean Architecture with dependency injection
 - **📈 Performance**: Memory monitoring and benchmarking tools
 
@@ -376,7 +345,6 @@ This POC teaches critical production patterns:
 - Always use cursors/streams for large datasets
 - Monitor memory usage in production
 - Implement proper error handling
-- Use observability tools (Coroot)
 - Test with realistic data volumes
 
 ### ❌ **Avoid This**

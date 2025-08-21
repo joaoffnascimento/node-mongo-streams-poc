@@ -78,16 +78,6 @@
             "_type": "request"
         },
         {
-            "_id": "req_metrics",
-            "parentId": "fld_1",
-            "created": 1690000000008,
-            "modified": 1690000000008,
-            "name": "Prometheus Metrics",
-            "method": "GET",
-            "url": "{{ base_url }}/metrics",
-            "_type": "request"
-        },
-        {
             "_id": "req_stream_process",
             "parentId": "fld_2",
             "created": 1690000000009,

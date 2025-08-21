@@ -69,8 +69,6 @@ export class CliApiService {
 
       const documentCount = await this.repository.count();
 
-      // Update MongoDB metrics for Prometheus
-
       const response = {
         success: true,
         data: {

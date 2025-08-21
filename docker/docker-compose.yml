@@ -29,9 +29,7 @@ services:
       --profile 1
     networks:
       - streams-network
-    labels:
-      - "coroot.service=mongodb"
-      - "coroot.version=7.0"
+
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
       interval: 10s
@@ -67,65 +65,7 @@ services:
           memory: 256M
     networks:
       - streams-network
-    labels:
-      - "coroot.service=streams-api"
-      - "coroot.version=1.0.0"
 
-  # Coroot Community Edition
-  coroot:
-    image: ghcr.io/coroot/coroot:latest
-    container_name: coroot
-    restart: "no"
-    ports:
-      - "8080:8080"
-    environment:
-      - BOOTSTRAP_CLICKHOUSE_ADDRESS=clickhouse:9000
-    depends_on:
-      - clickhouse
-    networks:
-      - streams-network
-    volumes:
-      - coroot-data:/data
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-
-  # Coroot Node Agent (Collects system metrics) - Optional
-  coroot-node-agent:
-    image: ghcr.io/coroot/coroot-node-agent:latest
-    container_name: coroot-node-agent
-    restart: "no"
-    privileged: true
-    pid: host
-    ports:
-      - "8082:80"
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /dev:/host/dev:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    environment:
-      - LISTEN=0.0.0.0:80
-    networks:
-      - streams-network
-    profiles:
-      - full-monitoring
-
-  # ClickHouse for storing metrics data
-  clickhouse:
-    image: clickhouse/clickhouse-server:latest
-    container_name: clickhouse
-    restart: "no"
-    ports:
-      - "9000:9000"
-      - "8123:8123"
-    environment:
-      - CLICKHOUSE_USER=default
-      - CLICKHOUSE_PASSWORD=
-      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
-    volumes:
-      - clickhouse-data:/var/lib/clickhouse
-      - ./monitoring/clickhouse-config.xml:/etc/clickhouse-server/config.d/custom.xml:ro
-    networks:
-      - streams-network
 
 networks:
   streams-network:
@@ -133,8 +73,4 @@ networks:
 
 volumes:
   mongodb-data:
-    driver: local
-  coroot-data:
-    driver: local
-  clickhouse-data:
     driver: local
