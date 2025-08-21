@@ -1,4 +1,4 @@
-# Simple Dockerfile for testing purposes
+# Dockerfile for POC - optimized for development
 FROM node:20-alpine
 
 # Install basic tools
@@ -6,22 +6,22 @@ RUN apk add --no-cache curl
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files first for better layer caching
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Install dependencies
+# Install ALL dependencies (including devDependencies for ts-node)
 RUN npm install
 
-# Copy source code
+# Copy source code after dependencies
 COPY src/ ./src/
 
 # Expose port
 EXPOSE 3000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
     CMD curl -f http://localhost:3000/health || exit 1
 
-# Start the API server in development mode
+# Start the API server using ts-node
 CMD ["npm", "run", "web"]
