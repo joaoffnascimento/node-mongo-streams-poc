@@ -1,11 +1,18 @@
-const chalk = require("chalk");
-const Table = require("cli-table3");
-const MongoDocumentRepository = require("../src/infrastructure/database/repositories/MongoDocumentRepository");
-const ProcessDocumentsWithStream = require("../src/domain/use-cases/ProcessDocumentsWithStream");
-const ProcessDocumentsWithoutStream = require("../src/domain/use-cases/ProcessDocumentsWithoutStream");
-const PerformanceMonitor = require("../src/infrastructure/monitoring/PerformanceMonitor");
+import chalk from "chalk";
+import Table from "cli-table3";
+import MongoDocumentRepository from "../src/infrastructure/database/repositories/MongoDocumentRepository";
+import ProcessDocumentsWithStream from "../src/domain/use-cases/ProcessDocumentsWithStream";
+import ProcessDocumentsWithoutStream from "../src/domain/use-cases/ProcessDocumentsWithoutStream";
+import PerformanceMonitor from "../src/infrastructure/monitoring/PerformanceMonitor";
+import mongoConnection from "../src/infrastructure/database/MongoConnection";
 
-async function runBenchmark() {
+interface TestResult {
+  size: number;
+  withStream: any;
+  withoutStream: any;
+}
+
+async function runBenchmark(): Promise<void> {
   console.log(chalk.bold.cyan("\n🏁 MONGODB STREAMS BENCHMARK\n"));
 
   const repository = new MongoDocumentRepository();
@@ -24,7 +31,7 @@ async function runBenchmark() {
 
     // Test different batch sizes for streams
     const testSizes = [10000, 50000, 100000];
-    const results = [];
+    const results: TestResult[] = [];
 
     for (const testSize of testSizes) {
       if (testSize > totalCount) continue;
@@ -36,7 +43,7 @@ async function runBenchmark() {
       );
       console.log("─".repeat(60));
 
-      const testResult = {
+      const testResult: TestResult = {
         size: testSize,
         withStream: null,
         withoutStream: null,
@@ -61,7 +68,7 @@ async function runBenchmark() {
         console.log(
           chalk.green(`✅ Completed in ${result.totalTime.toFixed(2)}s`)
         );
-      } catch (error) {
+      } catch (error: any) {
         console.log(chalk.red(`❌ Failed: ${error.message}`));
         testResult.withStream = { failed: true, error: error.message };
       }
@@ -93,7 +100,7 @@ async function runBenchmark() {
           console.log(
             chalk.red(`✅ Completed in ${result.totalTime.toFixed(2)}s`)
           );
-        } catch (error) {
+        } catch (error: any) {
           console.log(chalk.red(`❌ Failed: ${error.message}`));
           testResult.withoutStream = { failed: true, error: error.message };
         }
@@ -223,7 +230,6 @@ async function runBenchmark() {
     process.exit(1);
   } finally {
     // Close MongoDB connection to allow process to exit
-    const mongoConnection = require("../src/infrastructure/database/MongoConnection");
     await mongoConnection.disconnect();
     process.exit(0);
   }
@@ -234,4 +240,4 @@ if (require.main === module) {
   runBenchmark();
 }
 
-module.exports = runBenchmark;
+export default runBenchmark;

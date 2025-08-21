@@ -1,19 +1,23 @@
-const { Readable, Transform, pipeline } = require("stream");
-const { promisify } = require("util");
+import { Readable, Transform, pipeline } from "stream";
+import { promisify } from "util";
+import chalk from "chalk";
+import ora from "ora";
+import MongoDocumentRepository from "../src/infrastructure/database/repositories/MongoDocumentRepository";
+import Document from "../src/domain/entities/Document";
+import PerformanceMonitor from "../src/infrastructure/monitoring/PerformanceMonitor";
+import mongoConnection from "../src/infrastructure/database/MongoConnection";
+import config from "../src/infrastructure/config/environment";
+
 const pipelineAsync = promisify(pipeline);
-const MongoDocumentRepository = require("../src/infrastructure/database/repositories/MongoDocumentRepository");
-const Document = require("../src/domain/entities/Document");
-const PerformanceMonitor = require("../src/infrastructure/monitoring/PerformanceMonitor");
-const config = require("../src/infrastructure/config/environment");
-const chalk = require("chalk");
-const ora = require("ora");
 
 class DocumentGenerator extends Readable {
-  constructor(options = {}) {
+  private current = 0;
+  private total: number;
+  private categories = ["A", "B", "C", "D"];
+
+  constructor(options: { total?: number } = {}) {
     super({ objectMode: true });
-    this.current = 0;
     this.total = options.total || config.seed.totalDocuments;
-    this.categories = ["A", "B", "C", "D"];
   }
 
   _read() {
@@ -26,19 +30,15 @@ class DocumentGenerator extends Readable {
       id: this.current,
       timestamp: new Date(),
       value: Math.random() * 1000,
-      category:
-        this.categories[Math.floor(Math.random() * this.categories.length)],
+      category: this.categories[Math.floor(Math.random() * this.categories.length)] as "A" | "B" | "C" | "D",
       metadata: {
         source: "seed-generator",
         version: "1.0.0",
         processed: false,
         tags: Array(10)
-          .fill()
+          .fill(0)
           .map((_, i) => `tag_${i}`),
-        description:
-          `Document ${this.current} - Lorem ipsum dolor sit amet, consectetur adipiscing elit. `.repeat(
-            10
-          ),
+        description: `Document ${this.current} - Lorem ipsum dolor sit amet, consectetur adipiscing elit. `.repeat(10),
         nested: {
           level1: {
             level2: {
@@ -57,18 +57,21 @@ class DocumentGenerator extends Readable {
 }
 
 class ProgressTransform extends Transform {
-  constructor(options = {}) {
+  private total: number;
+  private processed = 0;
+  private startTime = Date.now();
+  private spinner: ora.Ora;
+
+  constructor(options: { total?: number } = {}) {
     super({ objectMode: true });
     this.total = options.total || config.seed.totalDocuments;
-    this.processed = 0;
-    this.startTime = Date.now();
     this.spinner = ora({
       text: "Seeding database...",
       spinner: "dots",
     }).start();
   }
 
-  _transform(document, encoding, callback) {
+  _transform(document: any, encoding: BufferEncoding, callback: Function) {
     this.processed++;
 
     if (this.processed % 10000 === 0) {
@@ -90,7 +93,7 @@ class ProgressTransform extends Transform {
     callback(null, document);
   }
 
-  _final(callback) {
+  _final(callback: Function) {
     this.spinner.succeed(
       chalk.green(
         `✅ Seeded ${this.processed.toLocaleString()} documents successfully!`
@@ -100,7 +103,7 @@ class ProgressTransform extends Transform {
   }
 }
 
-async function seedDatabase() {
+async function seedDatabase(): Promise<void> {
   console.log(chalk.bold.cyan("\n🌱 DATABASE SEEDING TOOL\n"));
   console.log(chalk.gray("Configuration:"));
   console.log(
@@ -152,7 +155,6 @@ async function seedDatabase() {
     process.exit(1);
   } finally {
     // Close MongoDB connection to allow process to exit
-    const mongoConnection = require("../src/infrastructure/database/MongoConnection");
     await mongoConnection.disconnect();
     process.exit(0);
   }
@@ -163,4 +165,4 @@ if (require.main === module) {
   seedDatabase();
 }
 
-module.exports = seedDatabase;
+export default seedDatabase;
