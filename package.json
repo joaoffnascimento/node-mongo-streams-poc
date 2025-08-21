@@ -2,7 +2,6 @@
     "name": "mongodb-streams-poc",
     "version": "1.0.0",
     "description": "POC demonstrating MongoDB streaming vs traditional processing with REST API",
-    "type": "module",
     "main": "src/presentation/app.server.ts",
     "scripts": {
         "// === BUILD COMMANDS ===": "",
