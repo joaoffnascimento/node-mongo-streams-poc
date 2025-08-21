@@ -37,12 +37,12 @@
     }
   },
   "include": [
-    "src/**/*",
-    "scripts/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
+    "scripts/**/*",
     "**/*.spec.ts",
     "**/*.test.ts"
   ],
