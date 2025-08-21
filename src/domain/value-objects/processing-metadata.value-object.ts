@@ -2,7 +2,7 @@ export interface ProcessingMetadata {
   readonly processedValue: number;
   readonly squared: number;
   readonly sqrt: number;
-  readonly heavyData?: any[];
+  readonly heavyData?: unknown[];
 }
 
 export class ProcessedDocument {

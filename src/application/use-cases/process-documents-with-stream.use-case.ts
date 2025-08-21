@@ -23,9 +23,11 @@ export class ProcessDocumentsWithStreamUseCase {
     private readonly processingService: DocumentProcessingService
   ) {}
 
-  public async execute(options: ProcessStreamOptions = {}): Promise<ProcessStreamResult> {
+  public async execute(
+    options: ProcessStreamOptions = {}
+  ): Promise<ProcessStreamResult> {
     this.logger.info('Starting stream processing', { options });
-    
+
     const startTime = Date.now();
     const initialMemory = process.memoryUsage();
     let processedCount = 0;
@@ -36,13 +38,17 @@ export class ProcessDocumentsWithStreamUseCase {
       limit: limit,
     };
 
-    const cursorStream = await this.documentRepository.findAllStream(cursorStreamOptions);
+    const cursorStream =
+      await this.documentRepository.findAllStream(cursorStreamOptions);
 
     await new Promise<void>((resolve, reject) => {
       cursorStream.on('data', (chunk: any) => {
         try {
           if (processedCount >= limit) {
-            if ('destroy' in cursorStream && typeof cursorStream.destroy === 'function') {
+            if (
+              'destroy' in cursorStream &&
+              typeof cursorStream.destroy === 'function'
+            ) {
               cursorStream.destroy();
             }
             resolve();
@@ -58,13 +64,13 @@ export class ProcessDocumentsWithStreamUseCase {
             processed: chunk.processed,
             processedAt: chunk.processedAt,
           } as any);
-          
+
           processedCount++;
 
           if (processedCount % 1000 === 0) {
-            this.logger.info('Processing progress', { 
-              processed: processedCount, 
-              total: limit 
+            this.logger.info('Processing progress', {
+              processed: processedCount,
+              total: limit,
             });
           }
         } catch (error) {

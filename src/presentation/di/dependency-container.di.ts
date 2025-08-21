@@ -18,7 +18,9 @@ export class DependencyContainer {
 
   private getDocumentRepository(): MongoDocumentRepositoryAdapter {
     if (!this.documentRepository) {
-      this.documentRepository = new MongoDocumentRepositoryAdapter(mongoConnection);
+      this.documentRepository = new MongoDocumentRepositoryAdapter(
+        mongoConnection
+      );
     }
     return this.documentRepository;
   }
@@ -50,15 +52,19 @@ export class DependencyContainer {
         processingService
       );
 
-      const processWithoutStreamUseCase = new ProcessDocumentsWithoutStreamUseCase(
-        repository,
-        new PerformanceMonitorAdapter('traditional-processing'),
-        logger,
-        processingService
-      );
+      const processWithoutStreamUseCase =
+        new ProcessDocumentsWithoutStreamUseCase(
+          repository,
+          new PerformanceMonitorAdapter('traditional-processing'),
+          logger,
+          processingService
+        );
 
       const getStatusUseCase = new GetDocumentStatusUseCase(repository, logger);
-      const clearDocumentsUseCase = new ClearDocumentsUseCase(repository, logger);
+      const clearDocumentsUseCase = new ClearDocumentsUseCase(
+        repository,
+        logger
+      );
       const seedDatabaseUseCase = new SeedDatabaseUseCase(
         repository,
         new PerformanceMonitorAdapter('database-seeding'),

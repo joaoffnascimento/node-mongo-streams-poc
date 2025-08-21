@@ -1,4 +1,10 @@
-import { DocumentRepository, FindAllOptions, StreamOptions, DeleteResult, InsertStreamOptions } from '../../domain/ports/document-repository.port';
+import {
+  DocumentRepository,
+  FindAllOptions,
+  StreamOptions,
+  DeleteResult,
+  InsertStreamOptions,
+} from '../../domain/ports/document-repository.port';
 import { Document, DocumentData } from '../../domain/entities/document.entity';
 import { MongoConnection } from '../database/mongo-connection.database';
 import { Collection, FindOptions } from 'mongodb';
@@ -11,7 +17,9 @@ export class MongoDocumentRepositoryAdapter implements DocumentRepository {
 
   private async getCollection(): Promise<Collection<DocumentData>> {
     await this.mongoConnection.connect();
-    return this.mongoConnection.getCollection<DocumentData>(this.collectionName);
+    return this.mongoConnection.getCollection<DocumentData>(
+      this.collectionName
+    );
   }
 
   public async findAll(options: FindAllOptions = {}): Promise<Document[]> {
@@ -40,7 +48,7 @@ export class MongoDocumentRepositoryAdapter implements DocumentRepository {
     return cursor.stream();
   }
 
-  public async count(filter: Record<string, any> = {}): Promise<number> {
+  public async count(filter: Record<string, unknown> = {}): Promise<number> {
     const collection = await this.getCollection();
     return await collection.countDocuments(filter);
   }
@@ -62,7 +70,7 @@ export class MongoDocumentRepositoryAdapter implements DocumentRepository {
       objectMode: true,
       async write(document: Document, _encoding, callback) {
         try {
-          batch.push(document.toData());
+          batch.push(document.toJSON());
 
           if (batch.length >= batchSize) {
             const collection = await getCollection();
@@ -72,7 +80,7 @@ export class MongoDocumentRepositoryAdapter implements DocumentRepository {
 
           callback();
         } catch (error) {
-          callback(error);
+          callback(error instanceof Error ? error : new Error(String(error)));
         }
       },
       async final(callback) {
@@ -83,9 +91,9 @@ export class MongoDocumentRepositoryAdapter implements DocumentRepository {
           }
           callback();
         } catch (error) {
-          callback(error);
+          callback(error instanceof Error ? error : new Error(String(error)));
         }
-      }
+      },
     });
   }
 }

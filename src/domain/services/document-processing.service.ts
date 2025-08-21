@@ -7,7 +7,7 @@ export class DocumentProcessingService {
 
   public performHeavyProcessing(document: Document): Document {
     const processed = document.process();
-    
+
     for (let i = 0; i < 1000; i++) {
       Math.sqrt(processed.value.getValue() * i);
     }

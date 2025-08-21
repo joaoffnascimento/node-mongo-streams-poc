@@ -1,4 +1,4 @@
-import { MongoClient, Db, Collection } from "mongodb";
+import { MongoClient, Db, Collection } from 'mongodb';
 
 export class MongoConnection {
   private client: MongoClient | null = null;
@@ -7,7 +7,8 @@ export class MongoConnection {
   private readonly databaseName: string;
 
   constructor() {
-    this.connectionString = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+    this.connectionString =
+      process.env.MONGODB_URI || 'mongodb://localhost:27017';
     this.databaseName = process.env.MONGODB_DATABASE || 'streams-poc';
   }
 
@@ -20,7 +21,7 @@ export class MongoConnection {
       this.client = new MongoClient(this.connectionString);
       await this.client.connect();
       this.db = this.client.db(this.databaseName);
-      
+
       await this.db.admin().ping();
       this.setupEventHandlers();
     } catch (error) {
@@ -35,7 +36,7 @@ export class MongoConnection {
   private setupEventHandlers(): void {
     if (!this.client) return;
 
-    process.on("SIGINT", async () => {
+    process.on('SIGINT', async () => {
       await this.disconnect();
       process.exit(0);
     });
@@ -49,16 +50,18 @@ export class MongoConnection {
     }
   }
 
-  public getCollection<T extends Record<string, any> = any>(name: string): Collection<T> {
+  public getCollection<
+    T extends Record<string, unknown> = Record<string, unknown>,
+  >(name: string): Collection<T> {
     if (!this.db) {
-      throw new Error("Database not connected");
+      throw new Error('Database not connected');
     }
     return this.db.collection<T>(name);
   }
 
   public get database(): Db {
     if (!this.db) {
-      throw new Error("Database not connected");
+      throw new Error('Database not connected');
     }
     return this.db;
   }

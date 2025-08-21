@@ -16,9 +16,9 @@ export class GetDocumentStatusUseCase {
 
   public async execute(): Promise<DocumentStatusResult> {
     this.logger.info('Checking document status');
-    
+
     const documentCount = await this.documentRepository.count();
-    
+
     this.logger.info('Document status retrieved', { documentCount });
 
     return {

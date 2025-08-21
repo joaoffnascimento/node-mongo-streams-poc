@@ -24,19 +24,21 @@ export class ProcessDocumentsWithoutStreamUseCase {
     private readonly processingService: DocumentProcessingService
   ) {}
 
-  public async execute(options: ProcessTraditionalOptions = {}): Promise<ProcessTraditionalResult> {
+  public async execute(
+    options: ProcessTraditionalOptions = {}
+  ): Promise<ProcessTraditionalResult> {
     this.logger.info('Starting traditional processing', { options });
-    
+
     const startTime = Date.now();
     const initialMemory = process.memoryUsage();
     const limit = options.limit || 10000;
 
     this.logger.info('Loading documents from database', { limit });
-    
+
     const documents = await this.documentRepository.findAll({ limit });
-    
-    this.logger.info('Documents loaded, starting processing', { 
-      documentsLoaded: documents.length 
+
+    this.logger.info('Documents loaded, starting processing', {
+      documentsLoaded: documents.length,
     });
 
     const processedDocuments: Document[] = [];
@@ -48,9 +50,9 @@ export class ProcessDocumentsWithoutStreamUseCase {
       processedCount++;
 
       if (processedCount % 1000 === 0) {
-        this.logger.info('Processing progress', { 
-          processed: processedCount, 
-          total: documents.length 
+        this.logger.info('Processing progress', {
+          processed: processedCount,
+          total: documents.length,
         });
       }
     }

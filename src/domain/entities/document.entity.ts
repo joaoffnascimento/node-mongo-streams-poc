@@ -1,6 +1,6 @@
 import { DocumentId } from '../value-objects/document-id.value-object';
 import { DocumentValue } from '../value-objects/document-value.value-object';
-import { ProcessedDocument, ProcessingMetadata } from '../value-objects/processing-metadata.value-object';
+import { ProcessingMetadata } from '../value-objects/processing-metadata.value-object';
 
 export interface DocumentMetadata {
   source: string;
@@ -16,7 +16,7 @@ export interface DocumentMetadata {
       };
     };
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface DocumentData {
@@ -27,6 +27,7 @@ export interface DocumentData {
   metadata: DocumentMetadata;
   processed?: boolean;
   processedAt?: Date | null;
+  [key: string]: unknown;
 }
 
 export class Document {

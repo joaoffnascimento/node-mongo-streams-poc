@@ -1,4 +1,4 @@
-import { DocumentRepository, DeleteResult } from '../../domain/ports/document-repository.port';
+import { DocumentRepository } from '../../domain/ports/document-repository.port';
 import { Logger } from '../../domain/ports/logger.port';
 
 export interface ClearDocumentsResult {
@@ -14,10 +14,10 @@ export class ClearDocumentsUseCase {
 
   public async execute(): Promise<ClearDocumentsResult> {
     this.logger.info('Clearing all documents');
-    
+
     const result = await this.documentRepository.deleteAll();
     const deletedCount = result.deletedCount || 0;
-    
+
     this.logger.info('Documents cleared', { deletedCount });
 
     return {

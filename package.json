@@ -2,6 +2,7 @@
     "name": "mongodb-streams-poc",
     "version": "1.0.0",
     "description": "POC demonstrating MongoDB streaming vs traditional processing with REST API",
+    "type": "module",
     "main": "src/presentation/app.server.ts",
     "scripts": {
         "// === BUILD COMMANDS ===": "",
@@ -20,7 +21,12 @@
         "// === MONITORING & LOGS ===": "",
         "logs:all": "docker compose -f docker/docker-compose.yml logs -f",
         "logs:api": "docker compose -f docker/docker-compose.yml logs -f api",
-        "logs:db": "docker compose -f docker/docker-compose.yml logs -f mongodb"
+        "logs:db": "docker compose -f docker/docker-compose.yml logs -f mongodb",
+        "// === CODE QUALITY ===": "",
+        "lint": "eslint . --ext .ts,.js",
+        "lint:fix": "eslint . --ext .ts,.js --fix",
+        "format": "prettier --write \"**/*.{ts,js,json,md}\"",
+        "format:check": "prettier --check \"**/*.{ts,js,json,md}\""
     },
     "keywords": [
         "mongodb",
@@ -45,8 +51,14 @@
         "@types/mongodb": "^4.0.6",
         "@types/node": "^20.19.11",
         "@types/pino": "^7.0.4",
+        "@typescript-eslint/eslint-plugin": "^8.40.0",
+        "@typescript-eslint/parser": "^8.40.0",
+        "eslint": "^9.33.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-prettier": "^5.5.4",
         "jest": "^29.7.0",
         "nodemon": "^3.1.10",
+        "prettier": "^3.6.2",
         "ts-node": "^10.9.2",
         "tsconfig-paths": "^4.2.0",
         "typescript": "^5.9.2"
