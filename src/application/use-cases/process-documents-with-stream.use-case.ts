@@ -2,6 +2,7 @@ import { DocumentRepository } from '../../domain/ports/document-repository.port'
 import { PerformanceMonitor } from '../../domain/ports/performance-monitor.port';
 import { Logger } from '../../domain/ports/logger.port';
 import { DocumentProcessingService } from '../../domain/services/document-processing.service';
+import { Document, DocumentData } from '../../domain/entities/document.entity';
 
 export interface ProcessStreamOptions {
   limit?: number;
@@ -42,7 +43,7 @@ export class ProcessDocumentsWithStreamUseCase {
       await this.documentRepository.findAllStream(cursorStreamOptions);
 
     await new Promise<void>((resolve, reject) => {
-      cursorStream.on('data', (chunk: any) => {
+      cursorStream.on('data', (chunk: DocumentData) => {
         try {
           if (processedCount >= limit) {
             if (
@@ -55,7 +56,7 @@ export class ProcessDocumentsWithStreamUseCase {
             return;
           }
 
-          this.processingService.performHeavyProcessing({
+          const document = new Document({
             id: chunk.id,
             timestamp: chunk.timestamp,
             value: chunk.value,
@@ -63,7 +64,9 @@ export class ProcessDocumentsWithStreamUseCase {
             metadata: chunk.metadata,
             processed: chunk.processed,
             processedAt: chunk.processedAt,
-          } as any);
+          });
+
+          this.processingService.performHeavyProcessing(document);
 
           processedCount++;
 
