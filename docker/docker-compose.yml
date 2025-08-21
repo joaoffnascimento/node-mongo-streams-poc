@@ -5,7 +5,7 @@ services:
   mongodb:
     image: mongo:7
     container_name: streams-mongodb
-    restart: unless-stopped
+    restart: "no"
     ports:
       - "${MONGO_PORT:-27017}:27017"
     environment:
@@ -45,7 +45,7 @@ services:
       context: ..
       dockerfile: ${DOCKERFILE:-Dockerfile}
     container_name: streams-api
-    restart: unless-stopped
+    restart: "no"
     ports:
       - "${API_PORT:-3000}:3000"
     environment:
@@ -75,7 +75,7 @@ services:
   coroot:
     image: ghcr.io/coroot/coroot:latest
     container_name: coroot
-    restart: unless-stopped
+    restart: "no"
     ports:
       - "8080:8080"
     environment:
@@ -91,7 +91,7 @@ services:
   coroot-node-agent:
     image: ghcr.io/coroot/coroot-node-agent:latest
     container_name: coroot-node-agent
-    restart: unless-stopped
+    restart: "no"
     privileged: true
     pid: host
     ports:
@@ -110,7 +110,7 @@ services:
   clickhouse:
     image: clickhouse/clickhouse-server:latest
     container_name: clickhouse
-    restart: unless-stopped
+    restart: "no"
     ports:
       - "9000:9000"
       - "8123:8123"
