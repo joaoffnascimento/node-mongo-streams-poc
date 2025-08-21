@@ -3,10 +3,6 @@ import cors from "cors";
 import helmet from "helmet";
 import { CliApiService } from "./CliApiService";
 import logger from "@infrastructure/monitoring/logger";
-import {
-  register,
-  recordHttpRequest,
-} from "@infrastructure/monitoring/PrometheusMetrics";
 
 export class WebApiServer {
   private app: Application;
@@ -24,19 +20,6 @@ export class WebApiServer {
   }
 
   private setupMiddleware(): void {
-    // Metrics middleware - track all requests
-    this.app.use((req: Request, res: Response, next: NextFunction) => {
-      const start = Date.now();
-
-      res.on("finish", () => {
-        const duration = (Date.now() - start) / 1000; // Convert to seconds
-        const route = req.route ? req.route.path : req.path;
-        recordHttpRequest(req.method, route, res.statusCode, duration);
-      });
-
-      next();
-    });
-
     // Security middleware
     this.app.use(
       helmet({
@@ -80,15 +63,6 @@ export class WebApiServer {
       });
     });
 
-    // Prometheus metrics endpoint
-    this.app.get("/metrics", async (req: Request, res: Response) => {
-      try {
-        res.set("Content-Type", register.contentType);
-        res.end(await register.metrics());
-      } catch (error) {
-        res.status(500).json({ error: "Failed to collect metrics" });
-      }
-    });
 
     // API documentation
     this.app.get("/", (req: Request, res: Response) => {

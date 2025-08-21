@@ -6,12 +6,6 @@ import ProcessDocumentsWithoutStream from "@domain/use-cases/ProcessDocumentsWit
 import PerformanceMonitor from "@infrastructure/monitoring/PerformanceMonitor";
 import mongoConnection from "@infrastructure/database/MongoConnection";
 import logger from "@infrastructure/monitoring/logger";
-import {
-  recordProcessingMetrics,
-  recordComparisonMetrics,
-  updateMongodbMetrics,
-  databaseConnections,
-} from "@infrastructure/monitoring/PrometheusMetrics";
 
 interface CommandResult {
   success: boolean;
@@ -76,8 +70,6 @@ export class CliApiService {
       const documentCount = await this.repository.count();
 
       // Update MongoDB metrics for Prometheus
-      updateMongodbMetrics(documentCount, 0); // Collection size can be calculated separately if needed
-      databaseConnections.set(1); // Simple connection status
 
       const response = {
         success: true,
@@ -93,7 +85,6 @@ export class CliApiService {
       res.json(response);
     } catch (error: any) {
       logger.error("API: Status check failed", { error: error.message });
-      databaseConnections.set(0); // No connection
       res.status(500).json({
         success: false,
         error: error.message,
@@ -173,14 +164,6 @@ export class CliApiService {
       const executionTime = Date.now() - startTime;
       const durationSeconds = executionTime / 1000;
 
-      // Record Prometheus metrics
-      recordProcessingMetrics(
-        "stream",
-        "mongodb_cursor",
-        result.totalProcessed,
-        durationSeconds,
-        result.memoryUsed * 1024 * 1024 // Convert MB to bytes
-      );
 
       const detailedReport = this.createDetailedPerformanceReport(
         {
@@ -242,14 +225,6 @@ export class CliApiService {
       const executionTime = Date.now() - startTime;
       const durationSeconds = executionTime / 1000;
 
-      // Record Prometheus metrics
-      recordProcessingMetrics(
-        "traditional",
-        "memory_load",
-        result.totalProcessed,
-        durationSeconds,
-        result.memoryUsed * 1024 * 1024 // Convert MB to bytes
-      );
 
       const detailedReport = this.createDetailedPerformanceReport(
         {
@@ -380,13 +355,6 @@ export class CliApiService {
         ),
       };
 
-      // Record comparison metrics for Prometheus
-      recordComparisonMetrics(
-        streamResult.totalTime / 1000, // Convert to seconds
-        traditionalResult.totalTime / 1000,
-        streamResult.memoryUsed * 1024 * 1024, // Convert to bytes
-        traditionalResult.memoryUsed * 1024 * 1024
-      );
 
       const response: CommandResult = {
         success: true,
