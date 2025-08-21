@@ -21,7 +21,7 @@ interface SeedDatabaseResult {
 }
 
 class DocumentGenerator extends Readable {
-  private current = 0;
+  private current = 1;
   private total: number;
   private categories = ['A', 'B', 'C', 'D'];
 
@@ -32,7 +32,7 @@ class DocumentGenerator extends Readable {
   }
 
   _read() {
-    if (this.current >= this.total) {
+    if (this.current > this.total) {
       this.push(null);
       return;
     }

@@ -40,7 +40,7 @@ interface ComparisonResult {
 export class DocumentController {
   private getErrorMessage(error: unknown): string {
     if (error instanceof Error) {
-      return this.getErrorMessage(error);
+      return error.message;
     }
     return String(error);
   }

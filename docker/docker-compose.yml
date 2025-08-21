@@ -1,13 +1,13 @@
-version: "3.8"
+version: '3.8'
 
 services:
   # MongoDB Database (Unified Configuration)
   mongodb:
     image: mongo:7
     container_name: streams-mongodb
-    restart: "no"
+    restart: 'no'
     ports:
-      - "${MONGO_PORT:-27017}:27017"
+      - '${MONGO_PORT:-27017}:27017'
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password123}
@@ -19,7 +19,7 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: "0.5"
+          cpus: '0.5'
         reservations:
           memory: 256M
     command: >
@@ -43,13 +43,14 @@ services:
       context: ..
       dockerfile: ${DOCKERFILE:-Dockerfile}
     container_name: streams-api
-    restart: "no"
+    restart: 'no'
     ports:
-      - "${API_PORT:-3000}:3000"
+      - '${API_PORT:-3000}:3000'
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3000
       - MONGODB_URI=mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-password123}@mongodb:27017/${MONGO_DATABASE:-streams_poc}?authSource=admin
+      - MONGODB_DATABASE=${MONGO_DATABASE:-streams_poc}
       - LOG_LEVEL=${LOG_LEVEL:-info}
     depends_on:
       mongodb:
@@ -60,12 +61,11 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: "0.5"
+          cpus: '0.5'
         reservations:
           memory: 256M
     networks:
       - streams-network
-
 
 networks:
   streams-network:
