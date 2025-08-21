@@ -1,0 +1,57 @@
+global:
+  scrape_interval: 1s           # Real-time PoC demonstration
+  evaluation_interval: 1s       # Real-time rule evaluation
+  scrape_timeout: 500ms         # Fast timeout for responsiveness
+
+# Alertmanager configuration (optional for PoC)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'
+rule_files: []
+
+# Scrape configuration
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    scrape_interval: 1s
+    scrape_timeout: 500ms
+    static_configs:
+      - targets: ['localhost:9090']
+    metrics_path: /metrics
+
+  # Node.js API metrics
+  - job_name: 'streams-api'
+    scrape_interval: 1s          # Real-time for PoC
+    scrape_timeout: 500ms
+    static_configs:
+      - targets: ['api:9464']
+    metrics_path: /metrics
+
+  # MongoDB metrics via MongoDB Exporter
+  - job_name: 'mongodb'
+    scrape_interval: 1s          # Real-time for PoC
+    scrape_timeout: 500ms
+    static_configs:
+      - targets: ['mongodb-exporter:9216']
+    metrics_path: /metrics
+
+  # Node Exporter - Host system metrics
+  - job_name: 'node-exporter'
+    scrape_interval: 1s          # Real-time for PoC
+    scrape_timeout: 500ms
+    static_configs:
+      - targets: ['node-exporter:9100']
+    metrics_path: /metrics
+
+  # cAdvisor - Container metrics
+  - job_name: 'cadvisor'
+    scrape_interval: 1s          # Real-time for PoC
+    scrape_timeout: 500ms
+    static_configs:
+      - targets: ['cadvisor:8080']
+    metrics_path: /metrics
+
+# Note: Storage configuration is handled via command-line args in docker-compose.yml

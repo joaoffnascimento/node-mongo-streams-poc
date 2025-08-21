@@ -1,0 +1,98 @@
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+  log_level: info
+
+# Common configuration to be shared between ingester and querier
+common:
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore:
+      store: inmemory
+
+# Query configuration optimized for PoC
+query_range:
+  results_cache:
+    cache:
+      embedded_cache:
+        enabled: true
+        max_size_mb: 100
+
+# Schema configuration
+schema_config:
+  configs:
+    - from: 2020-10-24
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+
+# Storage configuration optimized for PoC
+storage_config:
+  boltdb_shipper:
+    active_index_directory: /loki/boltdb-shipper-active
+    cache_location: /loki/boltdb-shipper-cache
+    cache_ttl: 24h
+    shared_store: filesystem
+  filesystem:
+    directory: /loki/chunks
+
+# Compactor for managing retention (PoC optimized)
+compactor:
+  working_directory: /loki/boltdb-shipper-compactor
+  shared_store: filesystem
+  compaction_interval: 1m       # Frequent compaction for PoC
+  retention_enabled: true
+  retention_delete_delay: 2h    # Short retention for PoC
+  retention_delete_worker_count: 150
+
+# Limits configuration optimized for real-time PoC
+limits_config:
+  retention_period: 2h          # Short retention for PoC demo
+  enforce_metric_name: false
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+  ingestion_rate_mb: 16         # Higher ingestion rate for PoC
+  ingestion_burst_size_mb: 32   # Higher burst for PoC
+  per_stream_rate_limit: 8MB    # Higher per-stream rate
+  per_stream_rate_limit_burst: 16MB
+  max_query_parallelism: 64     # Higher parallelism for responsiveness
+  max_streams_per_user: 10000   # Higher limit for PoC
+  max_line_size: 256000         # Larger lines for detailed logs
+
+# Chunk store configuration
+chunk_store_config:
+  max_look_back_period: 2h      # Match retention period
+
+# Table manager configuration
+table_manager:
+  retention_deletes_enabled: true
+  retention_period: 2h          # Short retention for PoC
+
+# Frontend configuration for query performance
+frontend:
+  compress_responses: true
+  max_outstanding_per_tenant: 100
+
+# Ruler configuration (optional for PoC)
+ruler:
+  storage:
+    type: local
+    local:
+      directory: /loki/rules
+  rule_path: /loki/rules
+  alertmanager_url: http://localhost:9093
+  ring:
+    kvstore:
+      store: inmemory
+  enable_api: true

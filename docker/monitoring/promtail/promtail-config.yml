@@ -1,0 +1,131 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    backoff_config:
+      min_period: 100ms      # Fast retry for PoC
+      max_period: 1s         # Quick max retry for demo
+      max_retries: 10
+    batchsize: 1024          # Smaller batches for responsiveness
+    batchwait: 500ms         # Faster batch processing
+
+scrape_configs:
+  # Application logs from shared volume
+  - job_name: app-logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: streams-api
+          service: api
+          __path__: /var/log/app/*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            message: msg
+            service: service
+            request_id: req.id
+            method: req.method
+            url: req.url
+            status_code: res.statusCode
+            response_time: responseTime
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+      - labels:
+          level:
+          service:
+          method:
+          status_code:
+      - output:
+          source: message
+
+  # Docker container logs for all services
+  - job_name: docker-logs
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 1s     # Fast discovery for PoC
+    relabel_configs:
+      # Extract container name
+      - source_labels: [__meta_docker_container_name]
+        target_label: container_name
+        regex: '/(.*)'
+        replacement: '${1}'
+      
+      # Extract service label if present
+      - source_labels: [__meta_docker_container_label_com_docker_compose_service]
+        target_label: compose_service
+      
+      # Only scrape containers in our network
+      - source_labels: [__meta_docker_container_label_com_docker_compose_project]
+        regex: 'docker.*'
+        action: keep
+      
+      # Set the log path for docker containers
+      - source_labels: [__meta_docker_container_id]
+        target_label: __path__
+        replacement: /var/lib/docker/containers/${1}/${1}-json.log
+    
+    pipeline_stages:
+      # Parse Docker JSON logs
+      - json:
+          expressions:
+            output: log
+            stream: stream
+            timestamp: time
+      
+      # Parse timestamp
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+      
+      # Add stream label (stdout/stderr)
+      - labels:
+          stream:
+      
+      # Output the log content
+      - output:
+          source: output
+
+  # MongoDB logs (if available through Docker logs)
+  - job_name: mongodb-logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: mongodb
+          service: database
+          __path__: /var/lib/docker/containers/*/streams-mongodb-*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            log: log
+            stream: stream
+            time: time
+      - timestamp:
+          source: time
+          format: RFC3339Nano
+      - labels:
+          stream:
+      - output:
+          source: log
+
+  # System logs from journald (optional for host metrics)
+  - job_name: journal
+    journal:
+      max_age: 1h              # Recent logs only for PoC
+      labels:
+        job: systemd-journal
+        service: system
+    relabel_configs:
+      - source_labels: ['__journal__systemd_unit']
+        target_label: 'unit'
+      - source_labels: ['__journal_priority_keyword']
+        target_label: 'level'
