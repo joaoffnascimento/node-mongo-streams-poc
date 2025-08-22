@@ -75,16 +75,18 @@ This project follows **Clean Architecture** principles with clear separation of 
 src/
 ├── 📋 domain/                    # Business Logic (Pure)
 │   ├── entities/                 # Business entities
-│   ├── repositories/             # Repository interfaces
-│   └── use-cases/               # Business use cases
+│   ├── ports/                    # Repository interfaces
+│   ├── services/                 # Domain services
+│   ├── use-cases/               # Business use cases
+│   └── value-objects/           # Value objects
 ├── 🔧 application/              # Application Services
-│   ├── dto/                     # Data Transfer Objects
-│   └── services/                # Application services
+│   └── use-cases/               # Application use cases
 ├── 🌐 presentation/             # External Interfaces
-│   └── api/                     # REST API controllers
+│   ├── controllers/             # REST API controllers
+│   └── routes/                  # API routes
 └── 🔌 infrastructure/           # External Dependencies
-    ├── database/                # MongoDB implementation
-    └── monitoring/              # Logging and performance
+    ├── adapters/                # External service adapters
+    └── database/                # MongoDB implementation
 ```
 
 ### 🎯 **Key Principles Applied**
@@ -94,6 +96,40 @@ src/
 - **Interface Segregation**: Small, focused interfaces
 - **Repository Pattern**: Abstract data access
 - **Use Case Pattern**: Encapsulated business logic
+
+### 🔄 **Processing Implementations**
+
+**Stream Processing**
+
+```typescript
+async execute({ limit }: { limit: number }) {
+  const cursor = this.repository.findWithCursor({ limit });
+  let processedCount = 0;
+
+  for (let document = await cursor.next(); document != null; document = await cursor.next()) {
+    await this.processDocument(document);
+    processedCount++;
+  }
+
+  return { processedCount, memoryUsage: this.monitor.getMemoryUsage() };
+}
+```
+
+**Traditional Processing**
+
+```typescript
+async execute({ limit }: { limit: number }) {
+  const documents = await this.repository.findAll({ limit }); // ⚠️ Loads all into memory
+  let processedCount = 0;
+
+  for (const document of documents) {
+    await this.processDocument(document);
+    processedCount++;
+  }
+
+  return { processedCount, memoryUsage: this.monitor.getMemoryUsage() };
+}
+```
 
 ---
 
@@ -121,7 +157,7 @@ src/
 | -------- | ----------- | ------------------- |
 | `DELETE` | `/api/data` | Clear all documents |
 
-### � **API Response Format**
+### API Response Format
 
 All endpoints return consistent JSON responses:
 
@@ -314,237 +350,12 @@ Import the provided `insomnia-requests.json` file to get a complete collection o
 
 ---
 
-## 🤝 **Contributing**
-
-This project demonstrates clean architecture principles and is perfect for:
-
-- Learning clean architecture patterns
-- Understanding MongoDB streaming
-- Performance optimization techniques
-- API design best practices
-- Docker containerization
-
----
-
-## 📜 **License**
-
-MIT License - Feel free to use this for education, presentations, or production guidance.
-
----
-
-<div align="center">
-
-**Built with ❤️ using Clean Architecture principles**
-
-[🌟 Give it a star](https://github.com/joaoffnascimento/node-mongo-streams-poc) if you found this helpful!
-
-</div>
-curl http://localhost:3000/api/status
-```
-
-### Data Management
-
-```bash
-# Seed database with documents
-curl -X POST http://localhost:3000/api/seed \
-  -H "Content-Type: application/json" \
-  -d '{"count": 100000}'
-
-# Clear all documents
-curl -X DELETE http://localhost:3000/api/clear
-```
-
-### Performance Testing
-
-```bash
-# Test stream processing
-curl -X POST http://localhost:3000/api/process/stream \
-  -H "Content-Type: application/json" \
-  -d '{"limit": 50000}'
-
-# Test traditional processing
-curl -X POST http://localhost:3000/api/process/no-stream \
-  -H "Content-Type: application/json" \
-  -d '{"limit": 50000}'
-
-# Compare both approaches
-curl -X POST http://localhost:3000/api/compare \
-  -H "Content-Type: application/json" \
-  -d '{"limit": 50000}'
-```
-
-### 📋 **API Response Example**
-
-```json
-{
-  "success": true,
-  "data": {
-    "type": "COMPARISON",
-    "timestamp": "2025-01-21T15:30:00.000Z",
-    "streamResult": {
-      "totalProcessed": 100000,
-      "totalTime": 17100,
-      "memoryUsed": 52.43,
-      "method": "MongoDB Streaming",
-      "success": true
-    },
-    "traditionalResult": {
-      "totalProcessed": 0,
-      "error": "JavaScript heap out of memory",
-      "method": "Traditional Loading",
-      "success": false
-    },
-    "comparison": {
-      "winner": "Stream",
-      "memoryDifference": "∞% better",
-      "timeDifference": "Traditional failed"
-    }
-  }
-}
-```
-
----
-
-## 🏗️ **Architecture**
-
-### 📁 **Clean Architecture Structure**
-
-```
-mongodb-streams-poc/
-├── 🐳 docker/                    # Docker environment
-│   ├── docker-compose.yml        # MongoDB + API
-│   └── mongo-init.js             # Database initialization
-├── 🔧 src/
-│   ├── domain/                   # Business logic (Clean Architecture)
-│   │   ├── entities/             # Document entity
-│   │   ├── repositories/         # Repository interfaces
-│   │   └── use-cases/           # Processing use cases
-│   ├── infrastructure/          # External dependencies
-│   │   ├── database/            # MongoDB implementation
-│   │   └── monitoring/          # Logging and performance
-│   └── presentation/            # User interfaces
-│       ├── api/                 # REST API (Express.js)
-│       └── cli/                 # Command-line interface
-├── 📦 package.json              # Smart scripts for environment management
-└── 📊 scripts/                  # Benchmark and seeding scripts
-```
-
-### 🔄 **Processing Implementations**
-
-**Stream Processing (`ProcessDocumentsWithStream.ts`)**
-
-```typescript
-async execute({ limit }: { limit: number }) {
-  const cursor = this.repository.findWithCursor({ limit });
-  let processedCount = 0;
-
-  for (let document = await cursor.next(); document != null; document = await cursor.next()) {
-    await this.processDocument(document);
-    processedCount++;
-  }
-
-  return { processedCount, memoryUsage: this.monitor.getMemoryUsage() };
-}
-```
-
-**Traditional Processing (`ProcessDocumentsWithoutStream.ts`)**
-
-```typescript
-async execute({ limit }: { limit: number }) {
-  const documents = await this.repository.findAll({ limit }); // ⚠️ Loads all into memory
-  let processedCount = 0;
-
-  for (const document of documents) {
-    await this.processDocument(document);
-    processedCount++;
-  }
-
-  return { processedCount, memoryUsage: this.monitor.getMemoryUsage() };
-}
-```
-
----
-
-## 🚀 **Development Scripts**
-
-### Environment Management
-
-```bash
-npm run env:start     # Start environment
-npm run env:stop      # Stop environment
-npm run env:destroy   # Complete cleanup
-npm run env:status    # Check status
-```
-
-### Data Management
-
-```bash
-npm run data:status       # Check database status
-npm run data:seed:quick   # 10K documents
-npm run data:seed:medium  # 100K documents
-npm run data:seed:large   # 1M documents
-npm run data:clear        # Clear all data
-```
-
-### Testing & Benchmarks
-
-```bash
-npm run test:stream       # Test streaming approach
-npm run test:traditional  # Test traditional approach
-npm run test:compare      # Compare both methods
-npm run benchmark         # Full performance benchmark
-```
-
-### Monitoring & Logs
-
-```bash
-npm run logs:all     # All service logs
-npm run logs:api     # API server logs
-npm run logs:db      # MongoDB logs
-```
-
----
-
-## 🎪 **Perfect for Demonstrations**
-
-### 🎯 **Demo Script** (10-minute presentation)
-
-1. **🚀 Start Environment** (2 min)
-
-   ```bash
-   npm run session:demo
-   ```
-
-2. **📊 Show Small Dataset Success** (2 min)
-   - Navigate to http://localhost:3000
-   - Show API documentation
-   - Run comparison with 10K documents
-
-3. **💥 Demonstrate Traditional Failure** (3 min)
-   - Scale to 100K documents
-   - Watch traditional approach crash
-   - Show streams continuing to work
-
-4. **🎯 Key Takeaways** (1 min)
-   - Memory efficiency matters
-   - Streams enable unlimited scalability
-   - Production reliability is critical
-
-### 📊 **Visual Impact**
-
-- **Real-time Graphs**: Memory spikes vs steady usage
-- **Error Messages**: Out-of-memory crashes in logs
-- **Performance Metrics**: Side-by-side comparisons
-- **Production Readiness**: Monitoring and observability
-
----
-
-## 🛠️ **Technology Stack**
+## ️ **Technology Stack**
 
 - **🏗️ Language**: TypeScript + Node.js 20
 - **🗄️ Database**: MongoDB 7 with cursor streaming
 - **🌐 API**: Express.js with comprehensive error handling
-- ** Deployment**: Docker Compose with smart profiles
+- **🐳 Deployment**: Docker Compose with smart profiles
 - **🧪 Architecture**: Clean Architecture with dependency injection
 - **📈 Performance**: Memory monitoring and benchmarking tools
 
@@ -611,6 +422,18 @@ This POC teaches critical production patterns:
 
 ---
 
+## 🤝 **Contributing**
+
+This project demonstrates clean architecture principles and is perfect for:
+
+- Learning clean architecture patterns
+- Understanding MongoDB streaming
+- Performance optimization techniques
+- API design best practices
+- Docker containerization
+
+---
+
 ## 📜 **License**
 
 MIT License - Feel free to use this for education, presentations, or production guidance.
@@ -619,13 +442,17 @@ MIT License - Feel free to use this for education, presentations, or production 
 
 <div align="center">
 
+**Built with ❤️ using Clean Architecture principles**
+
+[🌟 Give it a star](https://github.com/joaoffnascimento/node-mongo-streams-poc) if you found this helpful!
+
 **🚀 Ready to see why streams matter in production?**
 
 ```bash
-npm run session:start
+npm run env:start
 ```
 
-**Then watch the magic happen at http://localhost:8080** ✨
+**Then visit http://localhost:3000** ✨
 
 _"In production, memory management isn't optional—it's survival."_
 
