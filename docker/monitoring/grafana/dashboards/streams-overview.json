@@ -178,7 +178,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, rate(http_request_duration_ms_bucket[30s]))",
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket[2m])) by (le))",
           "interval": "",
           "legendFormat": "95th Percentile",
           "refId": "A"

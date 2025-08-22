@@ -60,8 +60,8 @@ compactor:
 limits_config:
   retention_period: 2h          # Short retention for PoC demo
   enforce_metric_name: false
-  reject_old_samples: true
-  reject_old_samples_max_age: 168h
+  reject_old_samples: false     # Accept old samples for demo
+  reject_old_samples_max_age: 720h  # Accept logs up to 30 days old
   ingestion_rate_mb: 16         # Higher ingestion rate for PoC
   ingestion_burst_size_mb: 32   # Higher burst for PoC
   per_stream_rate_limit: 8MB    # Higher per-stream rate
