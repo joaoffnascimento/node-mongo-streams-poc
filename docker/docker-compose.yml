@@ -143,22 +143,23 @@ services:
 
   # MongoDB Exporter - Database Metrics (Enhanced)
   mongodb-exporter:
-    image: percona/mongodb_exporter:0.39.0
+    image: percona/mongodb_exporter:0.40.0
     container_name: streams-mongodb-exporter
     restart: unless-stopped
     ports:
       - '9216:9216'
     environment:
-      - MONGODB_URI=mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-password123}@mongodb:27017/${MONGO_DATABASE:-streams_poc}?authSource=admin
-      - MONGODB_COLLECTING_INDEXUSAGESTATS=true
-      - MONGODB_COLLECTING_COLLSTATS=true
-      - MONGODB_COLLECTING_TOPMETRICS=true
-      - MONGODB_COLLECTING_DIAGNOSTICDATA=true
-      - MONGODB_COLLECTING_REPLICASETSTATUS=true
-      - MONGODB_COLLECTING_OPLOG=true
-      - MONGODB_COLLECTING_PROFILE=true
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/?authSource=admin
+    command:
+      - '--mongodb.uri=mongodb://admin:password123@mongodb:27017/?authSource=admin'
+      - '--mongodb.collstats-colls=.*'
+      - '--mongodb.indexstats-colls=.*'
+      - '--collect-all'
+      - '--compatible-mode'
+      - '--log.level=debug'
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     networks:
       - streams-network
 
