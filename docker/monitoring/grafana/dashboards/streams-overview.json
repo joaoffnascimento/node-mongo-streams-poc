@@ -108,7 +108,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(http_requests_total[1s])",
+          "expr": "rate(http_requests_total[30s])",
           "interval": "",
           "legendFormat": "{{method}} {{route}}",
           "refId": "A"
@@ -178,7 +178,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, rate(http_request_duration_ms_bucket[1s]))",
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_ms_bucket[30s]))",
           "interval": "",
           "legendFormat": "95th Percentile",
           "refId": "A"
@@ -267,7 +267,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[1s])) * 100)",
+          "expr": "100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
           "interval": "",
           "legendFormat": "CPU Usage",
           "refId": "A"
@@ -445,7 +445,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(container_cpu_usage_seconds_total{name=~\"streams-.*\"}[1s]) * 100",
+          "expr": "rate(container_cpu_usage_seconds_total{name=~\"streams-.*\"}[30s]) * 100",
           "interval": "",
           "legendFormat": "{{name}}",
           "refId": "A"
@@ -623,9 +623,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(mongodb_op_counters_total[1s])",
+          "expr": "rate(mongodb_operations_total[30s])",
           "interval": "",
-          "legendFormat": "{{type}}",
+          "legendFormat": "{{operation}}",
           "refId": "A"
         }
       ],
@@ -712,9 +712,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "mongodb_connections",
+          "expr": "mongodb_up",
           "interval": "",
-          "legendFormat": "{{state}}",
+          "legendFormat": "MongoDB Status",
           "refId": "A"
         }
       ],
