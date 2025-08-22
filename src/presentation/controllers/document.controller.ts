@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { ProcessDocumentsWithStreamUseCase } from '../../application/use-cases/process-documents-with-stream.use-case';
 import { ProcessDocumentsWithoutStreamUseCase } from '../../application/use-cases/process-documents-without-stream.use-case';
+import { ProcessDocumentsToCsvUseCase } from '../../application/use-cases/process-documents-to-csv.use-case';
 import { GetDocumentStatusUseCase } from '../../application/use-cases/get-document-status.use-case';
 import { ClearDocumentsUseCase } from '../../application/use-cases/clear-documents.use-case';
 import { SeedDatabaseUseCase } from '../../application/use-cases/seed-database.use-case';
@@ -47,6 +48,7 @@ export class DocumentController {
   constructor(
     private readonly processWithStreamUseCase: ProcessDocumentsWithStreamUseCase,
     private readonly processWithoutStreamUseCase: ProcessDocumentsWithoutStreamUseCase,
+    private readonly processToCsvUseCase: ProcessDocumentsToCsvUseCase,
     private readonly getStatusUseCase: GetDocumentStatusUseCase,
     private readonly clearDocumentsUseCase: ClearDocumentsUseCase,
     private readonly seedDatabaseUseCase: SeedDatabaseUseCase
@@ -324,6 +326,80 @@ export class DocumentController {
       res
         .status(500)
         .json(this.createResponse(null, false, this.getErrorMessage(error)));
+    }
+  }
+
+  public async downloadProcessedCsv(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const { limit, batchSize } = req.body as {
+        limit?: number;
+        batchSize?: number;
+      };
+
+      console.log('📊 Starting CSV processing and download...', {
+        limit: limit || 1000000,
+        batchSize: batchSize || 1000,
+      });
+
+      // Execute the CSV processing use case
+      const result = await this.processToCsvUseCase.execute({
+        limit,
+        batchSize,
+      });
+
+      // Set headers for CSV download
+      const fileName = `processed_documents_${new Date().toISOString().split('T')[0]}.csv`;
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${fileName}"`
+      );
+
+      // Log the start of the download
+      console.log('📥 Starting CSV download...', {
+        fileName,
+        expectedDocuments: limit || 1000000,
+      });
+
+      // Pipe the CSV stream directly to the response
+      result.csvStream.pipe(res);
+
+      // Handle stream completion and errors
+      result.csvStream.on('end', () => {
+        console.log('✅ CSV download completed successfully');
+      });
+
+      result.csvStream.on('error', error => {
+        console.error('❌ Error during CSV download:', error);
+        if (!res.headersSent) {
+          res
+            .status(500)
+            .json(
+              this.createResponse(null, false, 'Error generating CSV file')
+            );
+        }
+      });
+
+      // Handle client disconnect
+      req.on('close', () => {
+        console.log('🔌 Client disconnected during CSV download');
+        if (
+          result.csvStream &&
+          typeof result.csvStream.destroy === 'function'
+        ) {
+          result.csvStream.destroy();
+        }
+      });
+    } catch (error: unknown) {
+      console.error('❌ CSV processing failed:', this.getErrorMessage(error));
+      if (!res.headersSent) {
+        res
+          .status(500)
+          .json(this.createResponse(null, false, this.getErrorMessage(error)));
+      }
     }
   }
 }

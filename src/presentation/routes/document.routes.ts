@@ -12,6 +12,9 @@ export function createDocumentRoutes(container: DependencyContainer): Router {
   router.post('/process/traditional', (req, res) =>
     controller.processWithoutStream(req, res)
   );
+  router.post('/process/csv-download', (req, res) =>
+    controller.downloadProcessedCsv(req, res)
+  );
   router.post('/compare', (req, res) => controller.compareProcessing(req, res));
   router.post('/seed', (req, res) => controller.seedDatabase(req, res));
   router.delete('/data', (req, res) => controller.clearData(req, res));

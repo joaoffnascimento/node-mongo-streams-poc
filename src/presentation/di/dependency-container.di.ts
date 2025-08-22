@@ -1,6 +1,7 @@
 import { DocumentController } from '../controllers/document.controller';
 import { ProcessDocumentsWithStreamUseCase } from '../../application/use-cases/process-documents-with-stream.use-case';
 import { ProcessDocumentsWithoutStreamUseCase } from '../../application/use-cases/process-documents-without-stream.use-case';
+import { ProcessDocumentsToCsvUseCase } from '../../application/use-cases/process-documents-to-csv.use-case';
 import { GetDocumentStatusUseCase } from '../../application/use-cases/get-document-status.use-case';
 import { ClearDocumentsUseCase } from '../../application/use-cases/clear-documents.use-case';
 import { SeedDatabaseUseCase } from '../../application/use-cases/seed-database.use-case';
@@ -60,6 +61,13 @@ export class DependencyContainer {
           processingService
         );
 
+      const processToCsvUseCase = new ProcessDocumentsToCsvUseCase(
+        repository,
+        new PerformanceMonitorAdapter('csv-processing'),
+        logger,
+        processingService
+      );
+
       const getStatusUseCase = new GetDocumentStatusUseCase(repository, logger);
       const clearDocumentsUseCase = new ClearDocumentsUseCase(
         repository,
@@ -74,6 +82,7 @@ export class DependencyContainer {
       this.documentController = new DocumentController(
         processWithStreamUseCase,
         processWithoutStreamUseCase,
+        processToCsvUseCase,
         getStatusUseCase,
         clearDocumentsUseCase,
         seedDatabaseUseCase

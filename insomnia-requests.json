@@ -175,6 +175,37 @@
             "_type": "request"
         },
         {
+            "_id": "req_csv_download",
+            "parentId": "fld_main",
+            "modified": 1724332800000,
+            "created": 1724332800000,
+            "url": "{{ _.base_url }}/api/process/csv-download",
+            "name": "Download Processed CSV",
+            "description": "Process documents with streams and download as CSV file",
+            "method": "POST",
+            "body": {
+                "mimeType": "application/json",
+                "text": "{\n  \"limit\": 100000,\n  \"batchSize\": 1000\n}"
+            },
+            "parameters": [],
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "authentication": {},
+            "metaSortKey": -1692569000000,
+            "isPrivate": false,
+            "settingStoreCookies": true,
+            "settingSendCookies": true,
+            "settingDisableRenderRequestBody": false,
+            "settingEncodeUrl": true,
+            "settingRebuildPath": true,
+            "settingFollowRedirects": "global",
+            "_type": "request"
+        },
+        {
             "_id": "req_clear_data",
             "parentId": "fld_main",
             "modified": 1692576000000,
