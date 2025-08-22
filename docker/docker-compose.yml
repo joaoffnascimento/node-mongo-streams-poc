@@ -141,7 +141,7 @@ services:
     networks:
       - streams-network
 
-  # MongoDB Exporter - Database Metrics
+  # MongoDB Exporter - Database Metrics (Enhanced)
   mongodb-exporter:
     image: percona/mongodb_exporter:0.39.0
     container_name: streams-mongodb-exporter
@@ -150,6 +150,13 @@ services:
       - '9216:9216'
     environment:
       - MONGODB_URI=mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-password123}@mongodb:27017/${MONGO_DATABASE:-streams_poc}?authSource=admin
+      - MONGODB_COLLECTING_INDEXUSAGESTATS=true
+      - MONGODB_COLLECTING_COLLSTATS=true
+      - MONGODB_COLLECTING_TOPMETRICS=true
+      - MONGODB_COLLECTING_DIAGNOSTICDATA=true
+      - MONGODB_COLLECTING_REPLICASETSTATUS=true
+      - MONGODB_COLLECTING_OPLOG=true
+      - MONGODB_COLLECTING_PROFILE=true
     depends_on:
       - mongodb
     networks:
@@ -174,7 +181,7 @@ services:
     networks:
       - streams-network
 
-  # cAdvisor - Container Metrics
+  # cAdvisor - Container Metrics (Enhanced)
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.47.0
     container_name: streams-cadvisor
@@ -190,6 +197,70 @@ services:
     privileged: true
     devices:
       - /dev/kmsg
+    command:
+      - '--housekeeping_interval=1s'
+      - '--max_housekeeping_interval=5s'
+      - '--allow_dynamic_housekeeping=true'
+      - '--global_housekeeping_interval=1s'
+      - '--docker_only=false'
+      - '--store_container_labels=false'
+      - '--whitelisted_container_labels=io.kubernetes.container.name,io.kubernetes.pod.name,io.kubernetes.pod.namespace'
+    networks:
+      - streams-network
+
+  # Netdata - Enhanced System and Network Monitoring
+  netdata:
+    image: netdata/netdata:v1.42.0
+    container_name: streams-netdata
+    restart: unless-stopped
+    ports:
+      - '19999:19999'
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/os-release:/host/etc/os-release:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - NETDATA_CLAIM_TOKEN=${NETDATA_CLAIM_TOKEN:-}
+      - NETDATA_CLAIM_URL=https://app.netdata.cloud
+      - NETDATA_CLAIM_ROOMS=${NETDATA_CLAIM_ROOMS:-}
+    networks:
+      - streams-network
+
+  # Blackbox Exporter - Network Connectivity Testing
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.24.0
+    container_name: streams-blackbox-exporter
+    restart: unless-stopped
+    ports:
+      - '9115:9115'
+    volumes:
+      - ./monitoring/blackbox/blackbox.yml:/config/blackbox.yml:ro
+    command:
+      - '--config.file=/config/blackbox.yml'
+    networks:
+      - streams-network
+
+  # Process Exporter - Enhanced Process Monitoring
+  process-exporter:
+    image: ncabatoff/process-exporter:0.7.10
+    container_name: streams-process-exporter
+    restart: unless-stopped
+    ports:
+      - '9256:9256'
+    volumes:
+      - /proc:/host/proc:ro
+      - ./monitoring/process-exporter/process-exporter.yml:/config/process-exporter.yml:ro
+    command:
+      - '--procfs=/host/proc'
+      - '--config.path=/config/process-exporter.yml'
+    privileged: true
     networks:
       - streams-network
 

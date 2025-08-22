@@ -54,4 +54,71 @@ scrape_configs:
       - targets: ['cadvisor:8080']
     metrics_path: /metrics
 
+  # Netdata - Enhanced system and network metrics
+  - job_name: 'netdata'
+    scrape_interval: 1s          # Real-time for PoC
+    scrape_timeout: 500ms
+    static_configs:
+      - targets: ['netdata:19999']
+    metrics_path: /api/v1/allmetrics
+    params:
+      format: ['prometheus']
+
+  # Blackbox Exporter - Network connectivity testing
+  - job_name: 'blackbox'
+    scrape_interval: 5s          # Network tests every 5s
+    scrape_timeout: 4s
+    static_configs:
+      - targets: ['blackbox-exporter:9115']
+    metrics_path: /metrics
+
+  # Blackbox - HTTP connectivity tests
+  - job_name: 'blackbox_http'
+    scrape_interval: 5s
+    scrape_timeout: 4s
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+        - http://api:3000/health        # API health check
+        - http://grafana:3000/login     # Grafana accessibility
+        - http://prometheus:9090/       # Prometheus web UI
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # Blackbox - TCP connectivity tests
+  - job_name: 'blackbox_tcp'
+    scrape_interval: 5s
+    scrape_timeout: 4s
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
+    static_configs:
+      - targets:
+        - mongodb:27017             # MongoDB connection
+        - prometheus:9090           # Prometheus port
+        - grafana:3000             # Grafana port
+        - loki:3100                # Loki port
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # Process Exporter - Enhanced process monitoring
+  - job_name: 'process-exporter'
+    scrape_interval: 1s          # Real-time for PoC
+    scrape_timeout: 500ms
+    static_configs:
+      - targets: ['process-exporter:9256']
+    metrics_path: /metrics
+
 # Note: Storage configuration is handled via command-line args in docker-compose.yml

@@ -1,0 +1,48 @@
+process_names:
+  - name: "{{.Comm}}"
+    cmdline:
+    - '.+'
+
+  - name: "mongodb"
+    cmdline:
+    - 'mongod'
+
+  - name: "node"
+    cmdline:
+    - 'node'
+
+  - name: "prometheus"
+    cmdline:
+    - 'prometheus'
+
+  - name: "grafana-server"
+    cmdline:
+    - 'grafana-server'
+
+  - name: "loki"
+    cmdline:
+    - 'loki'
+
+  - name: "promtail"
+    cmdline:
+    - 'promtail'
+
+  - name: "cadvisor"
+    cmdline:
+    - 'cadvisor'
+
+  - name: "node_exporter"
+    cmdline:
+    - 'node_exporter'
+
+  - name: "mongodb_exporter"
+    cmdline:
+    - 'mongodb_exporter'
+
+  - name: "netdata"
+    cmdline:
+    - 'netdata'
+
+  - name: "blackbox_exporter"
+    cmdline:
+    - 'blackbox_exporter'
